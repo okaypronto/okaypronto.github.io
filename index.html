@@ -1,0 +1,1417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<script>
+/* Path routing: pin relative asset URLs to the app root, so deep paths
+   (/song/<slug>, /artist/<id>, /catalog, ...) resolve assets exactly like
+   the homepage does. Runs before any asset on the page loads. */
+(function(){
+  var PAGES = ["home","brand-new","catalog","analytics","assets","about","trypp","services","subscribe"];
+  var p = window.location.pathname || "/";
+  var root = p, m = p.match(/^(.*\/)(?:song|artist)\/[^/]+\/?$/);
+  if(m){ root = m[1]; }
+  else if(p.slice(-1) !== "/"){
+    var last = p.split("/").pop();
+    if(last === "index.html" || PAGES.indexOf(last) >= 0 || last.indexOf(".") >= 0) root = p.slice(0, p.length - last.length);
+    else root = p + "/";
+  }
+  var b = document.createElement("base");
+  b.setAttribute("href", root || "/");
+  document.head.appendChild(b);
+})();
+</script>
+<link rel="icon" href="data:," />
+<title>Okay Pronto | Soca Producer &amp; Songwriter NYC</title>
+<style>
+  :root{
+    --bg:#070708; --bg2:#0e0e10; --panel:rgba(255,255,255,.06); --panel2:rgba(255,255,255,.09);
+    --line:rgba(255,255,255,.12); --text:#f4f2ec; --muted:#a8a49b; --muted2:#7d7a73;
+    --gold:#c9a86a; --gold2:#e8cf94; --radius:20px;
+  }
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3,p,ul,figure{margin:0} ul{padding:0;list-style:none} a{color:inherit;text-decoration:none} img{display:block;max-width:100%}
+  button{font:inherit}
+
+  /* NAV */
+  .nav{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;background:rgba(7,7,8,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07)}
+  .nav img{width:150px;height:auto}
+  .nav-links{display:none;gap:18px;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .nav-links a{padding:6px 2px;border-bottom:2px solid transparent}
+  .nav-links a:hover{color:#fff}
+  .nav-links a.active{color:var(--gold2);border-bottom-color:var(--gold)}
+  .nav-cta{font-size:13px;font-weight:700;letter-spacing:.04em;background:var(--gold);color:#111;padding:10px 16px;border-radius:999px;white-space:nowrap}
+  .nav-cta:hover{background:var(--gold2)}
+  @media(min-width:1080px){.nav-links{display:flex}.nav{padding:16px 36px}.nav img{width:168px}}
+
+  /* MOBILE MENU */
+  .menu-btn{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:999px;padding:10px 15px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .menu-btn:hover{border-color:var(--gold)}
+  .menu-btn .bars{display:inline-flex;flex-direction:column;gap:4px}
+  .menu-btn .bars i{display:block;width:16px;height:2px;background:currentColor;border-radius:2px;transition:transform .25s ease,opacity .2s ease}
+  .menu-btn[aria-expanded="true"] .bars i:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  .menu-btn[aria-expanded="true"] .bars i:nth-child(2){opacity:0}
+  .menu-btn[aria-expanded="true"] .bars i:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+  .mobile-menu{position:fixed;inset:0;z-index:49;display:none}
+  .mobile-menu.open{display:block}
+  .mobile-menu-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+  .mobile-menu-panel{position:absolute;top:0;left:0;right:0;max-height:100svh;overflow-y:auto;padding:86px 20px 22px;background:rgba(10,10,11,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.1);animation:menuDrop .25s ease}
+  @keyframes menuDrop{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+  .mobile-menu-panel nav{display:flex;flex-direction:column}
+  .mobile-menu-panel nav a{font-size:19px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center}
+  .mobile-menu-panel nav a:last-of-type{border-bottom:none}
+  .mobile-menu-panel nav a span.arr{color:var(--gold);font-size:15px}
+  .mobile-menu-panel nav a.active{color:var(--gold2)}
+  .mobile-menu-panel nav a:active,.mobile-menu-panel nav a:hover{color:var(--gold2)}
+  .mobile-menu-book{margin-top:16px;display:flex;justify-content:center;background:var(--gold);color:#111;padding:15px 18px;border-radius:999px;font-weight:800;font-size:15px}
+  .mobile-menu-book:hover{background:var(--gold2)}
+  @media(min-width:1080px){.menu-btn{display:none}.mobile-menu{display:none!important}}
+  @media(max-width:639px){.nav-cta{display:none}}
+  @media (prefers-reduced-motion: reduce){.mobile-menu-panel{animation:none}.menu-btn .bars i{transition:none}}
+
+  /* PAGES (router) */
+  .page{display:none}
+  .page.active{display:block;animation:pageIn .45s ease}
+  @keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .page-hero{position:relative;padding:138px 0 8px;overflow:hidden;background:radial-gradient(800px 380px at 78% 0%,rgba(201,168,106,.15),transparent 60%),radial-gradient(600px 380px at 8% 30%,rgba(255,255,255,.05),transparent 55%)}
+  .page-hero h1{font-size:clamp(44px,8vw,88px);line-height:.9;letter-spacing:-.04em;font-weight:900;text-transform:uppercase;margin-top:14px}
+  .page-hero h1 em{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:500;text-transform:none;letter-spacing:-.02em;color:var(--gold2);font-size:.92em}
+  .page-hero .lede{margin-top:16px;max-width:620px;font-size:16.5px;line-height:1.65;color:#d8d5cc}
+  .page-hero .lede strong{color:#fff}
+  .float-chip{position:absolute;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);backdrop-filter:blur(8px);border-radius:14px;padding:10px 14px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);pointer-events:none;animation:floaty 7s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(1deg)}}
+  @media(max-width:760px){.float-chip{display:none}}
+
+  /* HERO */
+  .hero{position:relative;min-height:100svh;display:flex;align-items:flex-end;overflow:hidden;background:radial-gradient(900px 500px at 75% 15%,rgba(201,168,106,.16),transparent 60%),radial-gradient(700px 500px at 10% 80%,rgba(255,255,255,.06),transparent 55%),var(--bg)}
+  #gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .hero-mist{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(7,7,8,.96) 0%,rgba(7,7,8,.25) 38%,transparent 62%),linear-gradient(to bottom,rgba(7,7,8,.5),transparent 22%)}
+  .hero-mist::after{content:"";position:absolute;inset:auto 0 0 0;height:180px;background:linear-gradient(to top,var(--bg),transparent)}
+  .hero-content{position:relative;z-index:3;width:100%;max-width:1180px;margin:0 auto;padding:130px 20px 34px}
+  .hero-eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold2)}
+  .hero-eyebrow span.dot{width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block}
+  .hero h1{font-size:clamp(56px,11vw,132px);line-height:.88;letter-spacing:-.04em;font-weight:900;text-transform:uppercase;margin-top:16px}
+  .hero-sub{margin-top:18px;max-width:560px;font-size:17px;line-height:1.6;color:#d8d5cc}
+  .hero-sub strong{color:#fff}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;font-weight:700;font-size:14px;border:1px solid transparent;cursor:pointer}
+  .btn-gold{background:var(--gold);color:#121212}.btn-gold:hover{background:var(--gold2)}
+  .btn-glass{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;backdrop-filter:blur(12px)}
+  .btn-glass:hover{background:rgba(255,255,255,.14)}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);font-size:13px;color:var(--muted)}
+  .hero-meta b{color:#fff;font-size:15px;display:block}
+  .hero-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .chip{border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);color:#fff;border-radius:999px;padding:9px 14px;font-size:12.5px;font-weight:700;letter-spacing:.03em;cursor:pointer;backdrop-filter:blur(10px)}
+  .chip[aria-pressed="true"]{background:#fff;color:#111;border-color:#fff}
+  .chip:hover{border-color:var(--gold)}
+  #gl-error{display:none;position:absolute;z-index:5;top:84px;left:20px;right:20px;background:#2a1215;border:1px solid #7f1d1d;color:#fecaca;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+
+  /* TICKER */
+  .ticker{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:#0a0a0b}
+  .ticker-track{display:flex;gap:0;width:max-content;animation:tick 28s linear infinite;padding:13px 0}
+  .ticker-track span{font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);padding:0 18px;white-space:nowrap}
+  .ticker-track span i{color:var(--gold);font-style:normal}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  /* SECTIONS */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+  section.block{padding:76px 0 10px}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+  .sec-head h2{font-size:clamp(34px,5vw,56px);line-height:.95;letter-spacing:-.03em;font-weight:900;text-transform:uppercase}
+  .sec-head h2 em{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:500;text-transform:none;color:var(--gold2)}
+  .sec-head p{max-width:420px;color:var(--muted);line-height:1.6;font-size:15px}
+  .kicker{font-size:11px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+
+  /* CARDS */
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+  @media(min-width:1020px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .grid.two-col{grid-template-columns:1fr}
+  @media(min-width:760px){.grid.two-col{grid-template-columns:1fr 1fr}}
+  .card{perspective:900px}
+  .card-inner{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--panel);border:1px solid var(--line);transform-style:preserve-3d;transition:transform .35s ease;will-change:transform;height:100%;display:flex;flex-direction:column}
+  .card-art{aspect-ratio:1/1;overflow:hidden;position:relative;background:#161617}
+  .card-art img{width:100%;height:100%;object-fit:cover}
+  .badge{position:absolute;top:12px;left:12px;z-index:2;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:7px 10px;border-radius:999px}
+  .badge.gold{background:var(--gold);color:#111;border-color:transparent}
+  .glare{position:absolute;inset:0;background:radial-gradient(420px circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.22),transparent 45%);opacity:0;transition:opacity .25s;pointer-events:none;z-index:2}
+  .card:hover .glare{opacity:1}
+  .glass-tile{aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:space-between;padding:20px;background:linear-gradient(150deg,rgba(255,255,255,.14),rgba(255,255,255,.03) 45%,rgba(201,168,106,.14));position:relative;overflow:hidden}
+  .glass-tile::before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(201,168,106,.28);filter:blur(50px);right:-60px;top:-60px}
+  .glass-tile .big{font-size:44px;line-height:.9;font-weight:900;letter-spacing:-.03em;text-transform:uppercase;position:relative}
+  .glass-tile .small{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;position:relative}
+  .glass-tile .play{width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:grid;place-items:center;font-size:18px;background:rgba(0,0,0,.3);backdrop-filter:blur(8px);position:relative}
+  .card-body{padding:18px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .card-body h3{font-size:20px;letter-spacing:-.02em;line-height:1.1}
+  .card-body .artist{font-weight:700;color:var(--gold2);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+  .card-body p{color:var(--muted);font-size:14px;line-height:1.55;flex:1}
+  .card-link{margin-top:12px;font-size:13px;font-weight:800;letter-spacing:.04em;display:inline-flex;gap:8px;align-items:center}
+  a.card-link:hover{color:var(--gold2)}
+
+  /* SPOTLIGHT */
+  .spot{display:grid;gap:18px;margin-top:8px}
+  @media(min-width:900px){.spot{grid-template-columns:1.05fr .95fr}}
+  .spot-img{border-radius:24px;overflow:hidden;border:1px solid var(--line);min-height:320px}
+  .spot-img img{width:100%;height:100%;object-fit:cover;min-height:320px}
+  .spot-copy{border-radius:24px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));padding:28px;display:flex;flex-direction:column;justify-content:center}
+  .spot-copy h3{font-size:32px;line-height:1;letter-spacing:-.02em;margin:10px 0 12px}
+  .spot-copy p{color:var(--muted);line-height:1.65;font-size:15px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+  .stat{border-top:1px solid var(--line);padding-top:12px}
+  .stat b{font-size:22px;display:block;letter-spacing:-.02em}
+  .stat span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+
+  /* PANELS */
+  .two{display:grid;gap:16px}
+  @media(min-width:900px){.two{grid-template-columns:1fr 1fr}}
+  .panel{border-radius:24px;border:1px solid var(--line);padding:28px;position:relative;overflow:hidden}
+  .panel.book{background:linear-gradient(140deg,#171512,#0c0c0d 55%)}
+  .panel.sub{background:rgba(255,255,255,.05);backdrop-filter:blur(14px)}
+  .panel h3{font-size:28px;letter-spacing:-.02em;line-height:1.05;margin-bottom:10px}
+  .panel p{color:var(--muted);line-height:1.6;font-size:15px}
+  .svc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .svc li{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--line);padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.05)}
+  .fake-form{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .fake-form input{flex:1;min-width:210px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:999px;padding:14px 18px;color:#fff;font:inherit;font-size:14px;outline:none}
+  .fake-form input:focus{border-color:var(--gold)}
+  .fake-form input[type="text"]{border-radius:999px}
+  .note{font-size:12.5px;color:var(--muted2);margin-top:12px;line-height:1.5}
+  .sub-msg{display:none;margin-top:12px;background:rgba(201,168,106,.15);border:1px solid rgba(201,168,106,.4);color:var(--gold2);padding:12px 14px;border-radius:12px;font-size:14px;font-weight:600}
+
+  /* CATALOG */
+  .cat-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+  .cat-search{flex:1;min-width:220px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:13px 18px;color:#fff;font:inherit;font-size:14px;outline:none}
+  .cat-search:focus{border-color:var(--gold)}
+  .fchip{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);border-radius:999px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .fchip[aria-pressed="true"]{background:var(--gold);color:#111;border-color:var(--gold)}
+  .cat-count{font-size:13px;color:var(--muted2);margin:10px 2px 18px}
+  .cat-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:640px){.cat-grid{grid-template-columns:1fr 1fr}}
+  @media(min-width:1020px){.cat-grid{grid-template-columns:repeat(3,1fr)}}
+  .cat-item{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+  .cat-item .mono{width:46px;height:46px;flex:none;border-radius:12px;display:grid;place-items:center;background:linear-gradient(140deg,rgba(201,168,106,.3),rgba(255,255,255,.06));font-weight:900;font-size:17px;color:var(--gold2)}
+  .cat-item h3{font-size:16px;line-height:1.15;letter-spacing:-.01em}
+  .cat-item .who{font-size:12.5px;color:var(--gold2);font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
+  .cat-item .meta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .cat-item a.go{margin-left:auto;flex:none;font-size:12px;font-weight:800;color:var(--gold2);border:1px solid rgba(201,168,106,.45);padding:8px 12px;border-radius:999px;white-space:nowrap}
+  .cat-item a.go:hover{background:var(--gold);color:#111}
+  .show-more{margin:22px auto 0;display:flex}
+  .empty-state{border:1px dashed var(--line);border-radius:16px;padding:34px 20px;text-align:center;color:var(--muted);font-size:15px}
+
+  /* ANALYTICS */
+  .big-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(min-width:900px){.big-stats{grid-template-columns:repeat(4,1fr)}}
+  .big-stat{border:1px solid var(--line);border-radius:20px;padding:22px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02))}
+  .big-stat b{font-size:clamp(28px,4vw,40px);letter-spacing:-.03em;display:block;color:#fff}
+  .big-stat span{font-size:11.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:700;display:block;margin-top:6px;line-height:1.5}
+  .chart-card{border:1px solid var(--line);border-radius:20px;padding:24px;background:rgba(255,255,255,.04);margin-top:16px}
+  .chart-card h3{font-size:19px;margin-bottom:6px}
+  .chart-card p{color:var(--muted);font-size:14px;line-height:1.6}
+  .bar-row{display:grid;grid-template-columns:130px 1fr 74px;gap:12px;align-items:center;margin-top:16px;font-size:13px}
+  .bar-row .lbl{color:var(--muted);font-weight:700}
+  .bar-track{height:12px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#8a744a,var(--gold),var(--gold2));width:0;transition:width 1.1s ease}
+  .bar-row .val{font-weight:800;text-align:right}
+  @media(max-width:560px){.bar-row{grid-template-columns:96px 1fr 60px}}
+
+  /* LIST ROWS (assets, services, highlights) */
+  .rows{display:grid;gap:10px}
+  .row-item{display:flex;gap:16px;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:18px}
+  .row-item .n{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.1em;flex:none}
+  .row-item h3{font-size:17px;line-height:1.2}
+  .row-item p{color:var(--muted);font-size:13.5px;line-height:1.55;margin-top:3px}
+  .row-item .open{margin-left:auto;flex:none}
+  .prose{max-width:760px}
+  .prose p{color:#cfccc2;line-height:1.75;font-size:16px;margin-top:16px}
+  .prose p strong{color:#fff}
+  .photo-row{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+  @media(min-width:860px){.photo-row{grid-template-columns:repeat(4,1fr)}}
+  .photo-row figure{border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+  .photo-row img{width:100%;height:100%;object-fit:cover;aspect-ratio:3/4}
+  .riddim-cloud{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .riddim-cloud li{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:700}
+  .steps{display:grid;gap:12px}
+  @media(min-width:760px){.steps{grid-template-columns:repeat(3,1fr)}}
+  .step{border:1px solid var(--line);border-radius:18px;padding:20px;background:rgba(255,255,255,.04)}
+  .step b{color:var(--gold);font-size:13px;letter-spacing:.12em}
+  .step p{color:var(--muted);line-height:1.6;font-size:14.5px;margin-top:8px}
+  .song-hero{display:grid;gap:20px}
+  @media(min-width:900px){.song-hero{grid-template-columns:420px 1fr}}
+  .song-art{border-radius:24px;overflow:hidden;border:1px solid var(--line)}
+  .song-art img{width:100%;height:100%;object-fit:cover}
+  .credits{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .credit{border-top:1px solid var(--line);padding-top:10px}
+  .credit b{display:block;font-size:16px}
+  .credit span{font-size:11.5px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;font-weight:700}
+  .yt-wrap{border-radius:20px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9;background:#000}
+  .yt-wrap iframe{width:100%;height:100%;border:0;display:block}
+
+  footer{margin-top:84px;border-top:1px solid var(--line);background:#050506}
+  .foot{max-width:1180px;margin:0 auto;padding:34px 20px 44px}
+  .foot-top{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start}
+  .foot img{width:190px}
+  .foot nav{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:13px;font-weight:600;color:var(--muted);max-width:560px}
+  .foot nav a:hover{color:#fff}
+  .foot nav a.active{color:var(--gold2)}
+  .foot p{color:var(--muted2);font-size:13px;line-height:1.6;margin-top:18px;max-width:640px}
+
+  .reveal{opacity:.18;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .ticker-track{animation:none}
+    .reveal{opacity:1;transform:none;transition:none}
+    .card-inner{transition:none}
+    .page{animation:none}
+    .float-chip{animation:none}
+    .bar-fill{transition:none}
+  }
+
+  /* PARITY ADDITIONS */
+  .hero-stats-line{font-size:12px;font-weight:800;letter-spacing:.22em;color:var(--gold2);text-transform:uppercase;margin-top:14px}
+  .feat-grid{display:grid;gap:16px}
+  @media(min-width:860px){.feat-grid{grid-template-columns:1fr 1fr}}
+  .feat-card{border-radius:var(--radius);overflow:hidden;background:var(--panel);border:1px solid var(--line);display:block}
+  .feat-card img{width:100%;object-fit:cover}
+  .feat-card .fc-body{padding:20px}
+  .feat-card h3{font-size:21px;line-height:1.15;margin:6px 0 8px}
+  .feat-card p{color:var(--muted);font-size:14px;line-height:1.6}
+  .hit-grid{display:grid;gap:14px;grid-template-columns:1fr}
+  @media(min-width:640px){.hit-grid{grid-template-columns:1fr 1fr}}
+  @media(min-width:1020px){.hit-grid{grid-template-columns:repeat(3,1fr)}}
+  .hit{border:1px solid var(--line);border-radius:18px;padding:20px;background:var(--panel);position:relative}
+  .hit .bnum{position:absolute;top:14px;right:16px;color:var(--gold);font-weight:900;font-size:13px;letter-spacing:.1em}
+  .hit h3{font-size:19px;margin:4px 0 6px;line-height:1.15}
+  .hit h3 a:hover{color:var(--gold2)}
+  .hit .who{font-size:12px;color:var(--gold2);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .hit .line{color:var(--muted);font-size:14px;line-height:1.55}
+  .bchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .bchips span{font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:5px 9px;color:#d8d5cc;background:rgba(255,255,255,.04)}
+  .soon-grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+  @media(max-width:560px){.soon-grid{grid-template-columns:1fr}}
+  .soon{border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center;background:rgba(255,255,255,.04)}
+  .soon b{display:block;font-size:16px;margin-top:6px}
+  .team-grid{display:grid;gap:12px;grid-template-columns:1fr}
+  @media(min-width:640px){.team-grid{grid-template-columns:1fr 1fr}}
+  @media(min-width:1020px){.team-grid{grid-template-columns:repeat(3,1fr)}}
+  .member{border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--panel)}
+  .member h3{font-size:17px;margin-bottom:6px}
+  .member p{color:var(--muted);font-size:13.5px;line-height:1.6}
+  .cat-item .thumb{width:46px;height:46px;flex:none;border-radius:12px;object-fit:cover;background:#161617}
+  .flag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border:1px solid rgba(201,168,106,.5);color:var(--gold2);border-radius:999px;padding:2px 8px;margin-left:8px;white-space:nowrap}
+  .status-key{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12.5px;color:var(--muted);margin:0 2px 16px}
+  .status-key b{color:#fff}
+  .tier-lbl{color:var(--muted2)}
+  .songbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .songbar .spacer{flex:1}
+  .pnbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff;font-size:17px;cursor:pointer}
+  .pnbtn:disabled{opacity:.3;cursor:default}
+  .pnbtn:not(:disabled):hover{border-color:var(--gold)}
+  .backbtn{border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer}
+  .backbtn:hover{border-color:var(--gold)}
+  .yearpill{display:inline-block;background:var(--gold);color:#111;font-weight:800;font-size:12.5px;border-radius:999px;padding:5px 12px}
+  .creditrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .creditrow .chip{cursor:default}
+  .probnote{font-size:13px;color:var(--gold2);margin-top:10px}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media(min-width:760px){.statgrid{grid-template-columns:repeat(4,1fr)}}
+  .statcell{border-top:1px solid var(--line);padding-top:10px}
+  .statcell b{font-size:21px;display:block}
+  .statcell span{font-size:11.5px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  .statcell .peaks{font-size:14px;line-height:1.5;color:#fff;font-weight:600}
+  .songsec{margin-top:26px}
+  .songsec>h3{font-size:22px;margin-bottom:12px;letter-spacing:-.01em}
+  .notetext{color:#cfccc2;line-height:1.75;font-size:15.5px}
+  .relstrip{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+  @media(min-width:760px){.relstrip{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:1020px){.relstrip{grid-template-columns:repeat(6,1fr)}}
+  .relcard img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;border:1px solid var(--line);background:#161617}
+  .relcard .rt{display:block;font-weight:800;font-size:14.5px;line-height:1.2;margin-top:9px;color:#fff}
+  .relcard .rt:hover{color:var(--gold2)}
+  .relcard .ra{font-size:11.5px;color:var(--gold2);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+  .relcard .ra a:hover{text-decoration:underline}
+  .artistlink{color:var(--gold2)}
+  .artistlink:hover{text-decoration:underline}
+  .ana-row{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .ana-row h3{font-size:16px;line-height:1.2}
+  .ana-row .who{font-size:12px;color:var(--gold2);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+  .ana-row .nums{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.55}
+  .ana-row .nums b{color:#fff}
+  .socials{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .socials a{font-size:12.5px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:8px 13px;color:var(--muted)}
+  .socials a:hover{color:#fff;border-color:var(--gold)}
+  .pressdl{display:inline-flex;margin-top:10px;font-size:12.5px;font-weight:800;color:var(--gold2);border:1px solid rgba(201,168,106,.45);padding:8px 13px;border-radius:999px}
+  .pressdl:hover{background:var(--gold);color:#111}
+  .group-head{font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:26px 2px 12px}
+  .group-head:first-of-type{margin-top:6px}
+
+  .rls-row{display:flex;gap:18px;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:16px 18px}
+  .rls-row img.rart{width:92px;height:92px;flex:none;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:#161617}
+  .rls-row .glassph{width:92px;height:92px;flex:none;border-radius:14px;border:1px solid var(--line);background:linear-gradient(150deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 50%,rgba(201,168,106,.14));display:grid;place-items:center;font-weight:900;font-size:22px;color:var(--gold2)}
+  .rls-row h3{font-size:19px;line-height:1.15}
+  .rls-row h3 a:hover{color:var(--gold2)}
+  .rls-list{display:grid;gap:12px}
+  .hp-field{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  a.pnbtn{display:inline-grid;place-items:center;text-decoration:none}
+  a.backbtn{display:inline-flex;align-items:center;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="/" data-nav="home" aria-label="Okay Pronto home"><img src="assets/pronto-logo-white-transparent.png" alt="Okay Pronto" width="888" height="192"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <a href="/" data-nav="home">Home</a><a href="/brand-new" data-nav="brand-new">Brand New</a><a href="/catalog" data-nav="catalog">Catalog</a><a href="/analytics" data-nav="analytics">Analytics</a><a href="/assets" data-nav="assets">Assets</a><a href="/about" data-nav="about">About</a><a href="/trypp" data-nav="trypp">Trypp</a><a href="/services" data-nav="services">Services</a><a href="/subscribe" data-nav="subscribe">Subscribe</a>
+  </nav>
+  <a class="nav-cta" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book a session ↗</a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Menu</button>
+</header>
+
+<div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+  <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
+  <div class="mobile-menu-panel">
+    <nav aria-label="Mobile">
+      <a href="/" data-nav="home">Home <span class="arr">→</span></a>
+      <a href="/brand-new" data-nav="brand-new">Brand New <span class="arr">→</span></a>
+      <a href="/catalog" data-nav="catalog">Catalog <span class="arr">→</span></a>
+      <a href="/analytics" data-nav="analytics">Analytics <span class="arr">→</span></a>
+      <a href="/assets" data-nav="assets">Assets <span class="arr">→</span></a>
+      <a href="/about" data-nav="about">About <span class="arr">→</span></a>
+      <a href="/trypp" data-nav="trypp">Trypp <span class="arr">→</span></a>
+      <a href="/services" data-nav="services">Services <span class="arr">→</span></a>
+      <a href="/subscribe" data-nav="subscribe">Subscribe <span class="arr">→</span></a>
+    </nav>
+    <a class="mobile-menu-book" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book a session ↗</a>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ================= HOME ================= -->
+<div class="page" id="page-home" data-page="home">
+<section class="hero" id="top">
+  <canvas id="gl" aria-label="Floating scene of Okay Pronto press photos and release artwork" role="img"></canvas>
+  <div class="hero-mist"></div>
+  <div id="gl-error" role="alert"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow"><span class="dot"></span> Trypp Records &nbsp;·&nbsp; NYC × Trinidad &nbsp;·&nbsp; GRAMMY U</p>
+    <h1>Okay<br>Pronto</h1>
+    <p class="hero-sub">Soca producer, songwriter &amp; engineer. <strong>Real photos of Pronto and real artwork, floating in real time</strong> — move your pointer (or finger) and they drift with you. No zoom-ins. Just depth, glass, and mist.</p>
+    <div class="hero-actions">
+      <a class="btn btn-gold" href="/brand-new">▶ &nbsp;Latest — fresh out the studio</a>
+      <a class="btn btn-glass" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book studio time</a>
+    </div>
+    <div class="hero-controls" aria-label="3D scene controls">
+      <button class="chip" id="driftBtn" aria-pressed="true" type="button">✦ Drift: On</button>
+      <button class="chip" id="angleBtn" aria-pressed="false" type="button">◐ View: Straight on</button>
+      <button class="chip" id="goldBtn" aria-pressed="false" type="button">◎ Gold rings: Off</button>
+    </div>
+    <div class="hero-meta">
+      <div><b>Hook Up</b>Shorto — out now</div>
+      <div><b>Savannah</b>Okay Pronto — the new single</div>
+      <div><b>Eskimo (Remix)</b>Caribbean Music Award winner</div>
+    </div>
+    <p class="hero-stats-line">219 Records · 17 Riddims · 3 Albums</p>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="ticker-track" id="tickerTrack">
+  <span>Hook Up <i>✦</i></span><span>Eskimo (Remix) <i>✦</i></span><span>Savannah <i>✦</i></span><span>Pressure <i>✦</i></span><span>Heat In The Place <i>✦</i></span><span>Trypp Records <i>✦</i></span>
+</div></div>
+
+
+<section class="block wrap" style="padding-top:56px">
+  <div class="sec-head reveal">
+    <div><p class="kicker">Featured</p><h2>Love from<br>the <em>culture</em></h2></div>
+    <p>Milestones and reactions — the moments the culture sent back.</p>
+  </div>
+  <div class="feat-grid">
+    <a class="feat-card reveal" href="https://www.instagram.com/okaypronto/" target="_blank" rel="noopener">
+      <img src="assets/grammy-u-member-card.jpg" alt="Okay Pronto, GRAMMY U member announcement card" loading="lazy" width="900" height="1125">
+      <div class="fc-body"><p class="kicker" style="margin:0">Milestone</p><h3>Recording Academy (GRAMMY U) — New York Chapter</h3><p>Okay Pronto is officially a GRAMMY U member of the Recording Academy. See the announcement on Instagram ↗</p></div>
+    </a>
+    <a class="feat-card reveal" href="https://youtu.be/_KFKpDIlRlU?t=616" target="_blank" rel="noopener">
+      <img src="assets/whitewinemusic-savannah-thumb.jpg" alt="WhiteWineMusic reacting to Savannah by Okay Pronto" loading="lazy" width="880" height="495" style="aspect-ratio:16/9">
+      <div class="fc-body"><p class="kicker" style="margin:0">Reaction</p><h3>WhiteWineMusic reacts to SAVANNAH</h3><p>Watch the full reaction on YouTube ↗</p></div>
+    </a>
+  </div>
+</section>
+
+<section class="block wrap">
+  <div class="sec-head reveal">
+    <div><p class="kicker">Latest</p><h2>Fresh out<br>the <em>studio</em></h2></div>
+    <p>Newest first — that order is the rule. The full run lives on the <a href="/brand-new" style="color:var(--gold2);font-weight:700">Brand New page</a>, and every record lives in the <a href="/catalog" style="color:var(--gold2);font-weight:700">Catalog</a>.</p>
+  </div>
+  <div class="grid" id="latestGrid"></div>
+</section>
+
+<section class="block wrap">
+  <div class="sec-head reveal">
+    <div><p class="kicker">The Playlist</p><h2>Welcome to<br><em>Leonida</em></h2></div>
+    <p>One hundred soca anthems, sequenced for your run through the state of Leonida — streaming now on Spotify and YouTube.</p>
+  </div>
+  <div class="spot">
+    <figure class="spot-img reveal"><img src="assets/art-welcome-to-leonida.jpg" alt="Welcome to Leonida — GTA VI Soca playlist cover art: a pastel Vice City sunset postcard" loading="lazy" width="1000" height="1000"></figure>
+    <div class="spot-copy reveal">
+      <p class="kicker" style="margin:0">Playlist · 100 Soca Anthems</p>
+      <h3>Welcome to Leonida — GTA VI Soca</h3>
+      <p>Soca for your GTA VI run through Leonida. Cruise Vice City, the Leonida Keys, Port Gellhorn and the Grassrivers to 100 soca anthems. Jason and Lucia by day, fete by night. Curated by Okay Pronto.</p>
+      <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-gold" href="https://open.spotify.com/playlist/1Hpz1IvFUc7ekm0O1SxKUY" target="_blank" rel="noopener">Listen on Spotify</a>
+        <a class="btn btn-glass" href="https://www.youtube.com/playlist?list=PLdMqlzGc4Bg8" target="_blank" rel="noopener">Watch on YouTube</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="block wrap">
+  <div class="sec-head reveal">
+    <div><p class="kicker">The Story</p><h2>Receipts first,<br><em>bio second</em></h2></div>
+    <p>The short version — the full story, press kit, and team live on the <a href="/about" style="color:var(--gold2);font-weight:700">About page</a>.</p>
+  </div>
+  <div class="spot">
+    <figure class="spot-img reveal"><img src="assets/art-savannah-official.jpg" alt="Savannah — Okay Pronto official release artwork" loading="lazy" width="900" height="900"></figure>
+    <div class="spot-copy reveal">
+      <p class="kicker" style="margin:0">Producer · Songwriter · Engineer</p>
+      <h3>Trinidad-born.<br>NYC-based.</h3>
+      <p>Raised on soca and Carnival in New Grant, South Trinidad, Pronto built a career across the full record — writing, producing, performing, mixing, and mastering. In 2021 he founded Trypp Records, an independent label whose riddim business now feeds Carnival seasons every year. Two hundred nineteen records in — from the Road March–winning “Soca Kingdom” (2018) and the 2025 Eskimo breakout to the latest cuts off the board — the catalog on this site is the receipts.</p>
+      <div class="stats">
+        <div class="stat"><b>219</b><span>Records in the catalog</span></div>
+        <div class="stat"><b>17</b><span>Riddim packs</span></div>
+        <div class="stat"><b>3</b><span>Albums</span></div>
+        <div class="stat"><b>DAY ONES</b><span>The fan base — the Troop</span></div>
+      </div>
+      <p style="margin-top:20px"><a class="card-link" href="/about">Read the full story →</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="block wrap">
+  <div class="sec-head reveal">
+    <div><p class="kicker">Hits</p><h2>Records with<br><em>real numbers</em></h2></div>
+    <p>The banners from the live homepage — every one opens its full song page, with stats, video, and credits.</p>
+  </div>
+  <div class="hit-grid" id="hitGrid"></div>
+</section>
+
+<section class="block wrap">
+  <div class="sec-head reveal">
+    <div><p class="kicker">Coming Soon</p><h2>What&rsquo;s <em>next</em></h2></div>
+    <p>What&rsquo;s next from Okay Pronto and Trypp Records.</p>
+  </div>
+  <div class="soon-grid reveal">
+    <div class="soon"><p class="kicker" style="margin:0">Official Pronto Merch</p><b>Official Pronto Merch Drops Soon</b></div>
+    <div class="soon"><p class="kicker" style="margin:0">Events</p><b>Live shows and appearances</b></div>
+    <div class="soon"><p class="kicker" style="margin:0">Sample Packs</p><b>Soca and carnival drum kits</b></div>
+    <div class="soon"><p class="kicker" style="margin:0">4th Studio Album</p><b>4th Studio Album Loading</b></div>
+  </div>
+</section>
+
+
+<section class="block wrap" style="padding-bottom:76px">
+  <div class="two">
+    <div class="panel book reveal">
+      <p class="kicker">Services · Booking</p>
+      <h3>Book the studio.<br>Get the Pronto mix.</h3>
+      <p>Production, vocal production, mixing, mastering, and visual work — for soca, dancehall, tropical pop, R&amp;B and beyond.</p>
+      <ul class="svc"><li>Production</li><li>Mixing</li><li>Mastering</li><li>Vocal production</li><li>Video · Color</li></ul>
+      <a class="btn btn-gold" href="/services">See all services</a>
+      <p class="note">Six bookable services, all running through Pronto’s real Square Appointments page.</p>
+    </div>
+    <div class="panel sub reveal">
+      <p class="kicker">Subscribe · Join</p>
+      <h3>Join the DAY ONES.</h3>
+      <p>New drops, riddim voicings, and studio stories — first to the Troop, before anywhere else.</p>
+      <p style="margin-top:18px"><a class="btn btn-glass" href="/subscribe">Join the New Music List →</a></p>
+      <p class="note">Official audios · Stems · DJ packs · Acapellas · Exclusive releases · Announcements · Event invites.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ================= BRAND NEW ================= -->
+<div class="page" id="page-brand-new" data-page="brand-new">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:120px;right:8%">Fresh off the board</span>
+    <p class="kicker">Brand New</p>
+    <h1>Newest<br><em>first.</em></h1>
+    <p class="lede"><strong>14 records</strong> — the newest records off the board, newest first, exactly as the rail runs on the live site. Hook Up leads.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px;padding-bottom:76px">
+    <div class="rls-list" id="brandNewList"></div>
+  </section>
+</div>
+
+<!-- ================= CATALOG ================= -->
+<div class="page" id="page-catalog" data-page="catalog">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:10%">Written · Produced · Mixed · Mastered</span>
+    <p class="kicker">Catalog</p>
+    <h1>Every<br><em>record.</em></h1>
+    <p class="lede">The full catalog from the live site — <strong>220 records (219 songs + 1 video entry)</strong> Pronto wrote, produced, performed, mixed, or mastered. Text-first and fast: search it, filter by his role, and covers load only where a card carries one.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:40px;padding-bottom:76px">
+    <div class="cat-controls" role="search">
+      <input class="cat-search" id="catSearch" type="search" placeholder="Search title, artist, or riddim…" aria-label="Search the catalog">
+      <button class="fchip" type="button" data-role="all" aria-pressed="true">All</button>
+      <button class="fchip" type="button" data-role="written" aria-pressed="false">Written</button>
+      <button class="fchip" type="button" data-role="produced" aria-pressed="false">Produced</button>
+      <button class="fchip" type="button" data-role="performed" aria-pressed="false">Performed</button>
+      <button class="fchip" type="button" data-role="mixed" aria-pressed="false">Mixed</button>
+      <button class="fchip" type="button" data-role="mastered" aria-pressed="false">Mastered</button>
+    </div>
+    <div class="status-key"><span><b>Status key</b></span><span>No flag — verified against the entry&rsquo;s sources</span><span><span class="flag">Probable ?</span> single or conflicting source · awaiting confirmation</span><span><span class="flag">User-asserted</span> credited by Pronto himself · evidence source labeled</span></div>
+    <p class="cat-count" id="catCount" role="status"></p>
+    <div class="cat-grid" id="catGrid"></div>
+    <div class="empty-state" id="catEmpty" hidden>No records match that search. Try another title, artist, or role.</div>
+    <button class="btn btn-glass show-more" id="catMore" type="button" hidden>Show more records ↓</button>
+  </section>
+</div>
+
+<!-- ================= ANALYTICS ================= -->
+<div class="page" id="page-analytics" data-page="analytics">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:9%">SongStats · Public overview</span>
+    <p class="kicker">Analytics</p>
+    <h1>The<br><em>numbers.</em></h1>
+    <p class="lede">Public SongStats overviews, as presented on the live site — <strong>109 high-confidence matched tracks</strong> out of the catalog. The totals are a floor, not a career total: they cover only the matched half of the catalog.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px;padding-bottom:76px">
+    <div class="big-stats">
+      <div class="big-stat reveal"><b data-count="32031561" data-fmt="m">0</b><span>Total streams · matched tracks</span></div>
+      <div class="big-stat reveal"><b data-count="6478625" data-fmt="m">0</b><span>Playlist reach</span></div>
+      <div class="big-stat reveal"><b data-count="159056" data-fmt="k">0</b><span>Shazams</span></div>
+      <div class="big-stat reveal"><b data-count="756" data-fmt="n">0</b><span>Chart entries</span></div>
+      <div class="big-stat reveal"><b data-count="973" data-fmt="n">0</b><span>Playlists</span></div>
+      <div class="big-stat reveal"><b data-count="109" data-fmt="n">0</b><span>Tracks with public stats</span></div>
+      <div class="big-stat reveal"><b data-count="219" data-fmt="n">0</b><span>Records in the catalog</span></div>
+      <div class="big-stat reveal"><b data-count="50" data-fmt="pct">0</b><span>Catalog coverage · stats are a floor</span></div>
+    </div>
+
+    <div class="chart-card reveal">
+      <h3>Where the weight sits</h3>
+      <p>Streams, playlist reach, and Shazams across the 109 matched tracks — scaled to the biggest number so the shape reads honestly.</p>
+      <div class="bar-row"><span class="lbl">Streams</span><div class="bar-track"><div class="bar-fill" data-w="100"></div></div><span class="val">32.0M</span></div>
+      <div class="bar-row"><span class="lbl">Playlist reach</span><div class="bar-track"><div class="bar-fill" data-w="20"></div></div><span class="val">6.48M</span></div>
+      <div class="bar-row"><span class="lbl">Shazams</span><div class="bar-track"><div class="bar-fill" data-w="2"></div></div><span class="val">159K</span></div>
+      <p class="note" style="margin-top:18px">Source: SongStats public overview, as read on the live Analytics page (dataset generated Oct 1, 2026). Stream figures SongStats shows rounded are summed at face value; playlist and chart counts are summed only where publicly displayed.</p>
+    </div>
+
+    <div class="chart-card reveal">
+      <h3>Receipts behind the numbers</h3>
+      <p>“Eskimo (Remix)” — Trinidad Killa ft. Nicki Minaj (Feb 2025, Trypp Records): <strong style="color:#fff">iTunes #2, Apple Music #50, 169K+ YouTube views</strong> on the official audio, and the Caribbean Music Award for Soca Collaboration of the Year. “Private Party (The Origin Project)” with Machel Montano: 3.01M streams and 13.1K Shazams. Savannah: 3.1K Spotify streams in its first month.</p>
+      <p style="margin-top:14px"><a class="card-link" href="/catalog">See the records behind the stats →</a></p>
+    </div>
+    <div class="chart-card reveal">
+      <h3>What this counts</h3>
+      <p><strong style="color:#fff">109 of 219 songs (50%)</strong> carry public SongStats overviews. The fine print, exactly as the live Analytics page prints it:</p>
+      <ul id="cavList" style="margin-top:12px;display:grid;gap:8px"></ul>
+    </div>
+    <div class="chart-card reveal">
+      <h3>Every matched track</h3>
+      <p>All 109 tracks with public SongStats overviews — streams, playlists, playlist reach, chart entries, Shazams, release date, and the best-chart highlight for each.</p>
+      <div class="cat-controls" style="margin-top:16px"><input class="cat-search" id="anaSearch" type="search" placeholder="Search matched tracks — title or artist…" aria-label="Search analytics tracks"></div>
+      <p class="cat-count" id="anaCount" role="status"></p>
+      <div class="rows" id="anaRows"></div>
+      <div class="empty-state" id="anaEmpty" hidden>No matched tracks fit that search.</div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= ASSETS ================= -->
+<div class="page" id="page-assets" data-page="assets">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:10%">For DJs · Press · Radio</span>
+    <p class="kicker">Assets</p>
+    <h1>Official<br><em>packs.</em></h1>
+    <p class="lede"><strong>44 official asset packs</strong> from the live site — music, artwork, and promotional materials for DJs, press, and radio. Every “Open folder” button goes to the real Google Drive folder.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px;padding-bottom:20px">
+    <div class="sec-head reveal">
+      <div><p class="kicker">Featured</p><h2>Start <em>here</em></h2></div>
+      <p>The current-season packs — Soca 2027 and the Savannah &amp; Pressure folder.</p>
+    </div>
+    <div class="grid two-col">
+      <article class="card reveal"><div class="card-inner">
+        <div class="card-body" style="padding:26px"><p class="artist">Soca 2027 · incl. LucratiV</p><h3 style="font-size:26px">Soca 2027 Pack</h3><p>The Soca 2027 official assets folder — the season LucratiV’s “Dial In” is leading, video out now. Music, artwork, and promo materials for DJs and media.</p><p><a class="btn btn-gold" href="https://drive.google.com/drive/folders/1_1wVhF36ix9Mo8gxiComdVjpLf4Ax2Ka" target="_blank" rel="noopener">Open folder ↗</a></p></div>
+      </div></article>
+      <article class="card reveal"><div class="card-inner">
+        <div class="card-body" style="padding:26px"><p class="artist">Okay Pronto</p><h3 style="font-size:26px">Savannah &amp; Pressure</h3><p>Official assets folder for the Savannah single and the Pressure duet with Kryssy J. Music, artwork, and promotional materials.</p><p><a class="btn btn-gold" href="https://drive.google.com/drive/folders/18Z_A6AlP9vBvFCiMoKexo-ETjJbSsSA6" target="_blank" rel="noopener">Open folder ↗</a></p></div>
+      </div></article>
+    </div>
+  </section>
+  <section class="block wrap" style="padding-top:36px;padding-bottom:76px">
+    <div class="cat-controls">
+      <input class="cat-search" id="assetSearch" type="search" placeholder="Search asset packs — artist or title…" aria-label="Search asset packs">
+    </div>
+    <p class="cat-count" id="assetCount" role="status"></p>
+    <div class="rows" id="assetRows"></div>
+    <div class="empty-state" id="assetEmpty" hidden>No packs match that search.</div>
+  </section>
+</div>
+
+<!-- ================= ABOUT ================= -->
+<div class="page" id="page-about" data-page="about">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:9%">GRAMMY U · New York Chapter</span>
+    <p class="kicker">About</p>
+    <h1>Joseph<br><em>“Pronto”</em><br>Figueroa</h1>
+    <p class="lede">Also known as <strong>Okay Pronto</strong> (formerly Prince Pronto). Soca producer, songwriter, and sound engineer — from Trinidad, based in New York City.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px">
+    <div class="prose reveal">
+      <p>Trinidad-born, raised in <strong>New Grant, South Trinidad</strong>, and now based in New York City. Pronto built a career across the full record — writing, producing, performing, mixing, and mastering. In <strong>2021 he founded Trypp Records</strong>, an independent label whose riddim business now feeds Carnival seasons every year.</p>
+      <p>His breakout credit: writing and producing the 2025 <strong>“Eskimo (Remix)” by Trinidad Killa ft. Nicki Minaj</strong> — winner of the Caribbean Music Award for Soca Collaboration of the Year, plus iTunes #2 and Apple Music #50. Before that he wrote <strong>“Soca Kingdom”</strong> (Machel Montano x Superblue), the Trinidad Road March 2018 winner.</p>
+      <p>In <strong>October 2026</strong> he became a member of the Recording Academy (<strong>GRAMMY U</strong>), New York Chapter. The catalog on this site holds <strong>219 records</strong> he wrote, produced, performed, mixed, or mastered — every credit backed by its sources.</p>
+    </div>
+    <div class="stats reveal" style="max-width:760px;grid-template-columns:1fr 1fr">
+      <div class="stat"><b>219</b><span>Cataloged records</span></div>
+      <div class="stat"><b>2021</b><span>Trypp Records est.</span></div>
+      <div class="stat"><b>#2 / #50</b><span>iTunes / Apple Music — Eskimo (Remix)</span></div>
+      <div class="stat"><b>2018</b><span>Road March winner — Soca Kingdom</span></div>
+    </div>
+  </section>
+  <section class="block wrap">
+    <div class="sec-head reveal"><div><p class="kicker">Press photos</p><h2>The <em>man</em></h2></div><p>The same press photos floating in the homepage hero — shot across NYC and the studio.</p></div>
+    <div class="photo-row">
+      <figure class="reveal"><img src="assets/pronto-1.jpg" alt="Okay Pronto — denim jacket portrait" loading="lazy"></figure>
+      <figure class="reveal"><img src="assets/pronto-2.jpg" alt="Okay Pronto — black and white close-up" loading="lazy"></figure>
+      <figure class="reveal"><img src="assets/pronto-3.jpg" alt="Okay Pronto — seated portrait" loading="lazy"></figure>
+      <figure class="reveal"><img src="assets/pronto-artist-2026.jpg" alt="Okay Pronto — 2026 artist photo, NYC street" loading="lazy"></figure>
+    </div>
+  </section>
+  <section class="block wrap" style="padding-bottom:76px">
+    <div class="sec-head reveal"><div><p class="kicker">Career highlights</p><h2>Receipts <em>first</em></h2></div></div>
+    <div class="rows">
+      <div class="row-item reveal"><span class="n">01</span><div><h3>Caribbean Music Award</h3><p>Soca Collaboration of the Year for “Eskimo (Remix)”.</p></div></div>
+      <div class="row-item reveal"><span class="n">02</span><div><h3>Billboard-charting producer</h3><p>Established with the “Eskimo (Remix)” breakout.</p></div></div>
+      <div class="row-item reveal"><span class="n">03</span><div><h3>Eskimo (Remix)</h3><p>Trinidad Killa ft. Nicki Minaj, Feb 2025. iTunes #2, Apple Music #50, 169K+ YouTube views.</p></div></div>
+      <div class="row-item reveal"><span class="n">04</span><div><h3>Trypp Records</h3><p>Founded 2021. The label behind his records and his artist roster.</p></div></div>
+      <div class="row-item reveal"><span class="n">05</span><div><h3>219-record catalog</h3><p>Spanning performed, mixed, mastered, and produced records plus riddim projects.</p></div></div>
+      <div class="row-item reveal"><span class="n">06</span><div><h3>2026 release run</h3><p>“Pressure”, “I’m Okay”, “Jean &amp; Dinah”, “Heat In The Place”, “Big Wave”, “Love Letter”, “Savannah”.</p></div></div>
+    </div>
+    <div class="chart-card reveal">
+      <h3>Press coverage</h3>
+      <p>Outlets that covered “Eskimo (Remix)” (Trinidad Killa ft. Nicki Minaj): <strong style="color:#fff">SoapCentral · Sportskeeda · socarecords.com · iEnt Live</strong>.</p>
+      <p style="margin-top:14px"><a class="card-link" href="/trypp">Inside Trypp Records →</a> &nbsp;·&nbsp; <a class="card-link" href="/services">Work with Pronto →</a></p>
+    </div>
+  </section>
+  <section class="block wrap">
+    <div class="sec-head reveal"><div><p class="kicker">Press Kit</p><h2>One-sheet &amp;<br><em>photos</em></h2></div><p>Bio, career highlights, and press coverage in one PDF — plus the press photos, downloadable at full size.</p></div>
+    <p class="reveal"><a class="btn btn-gold" href="https://okaypronto.com/assets/okay-pronto-press-kit.pdf" download>Download the one-sheet (PDF) ↓</a></p>
+    <div class="photo-row" style="margin-top:22px">
+      <figure class="reveal"><img src="assets/pronto-artist-2026.jpg" alt="Okay Pronto, latest artist photo 2026" loading="lazy"><figcaption style="padding:10px 14px"><a class="pressdl" href="assets/pronto-artist-2026.jpg" download="okay-pronto-artist-2026.jpg">Download</a></figcaption></figure>
+      <figure class="reveal"><img src="assets/pronto-1.jpg" alt="Okay Pronto, soca producer and founder of Trypp Records" loading="lazy"><figcaption style="padding:10px 14px"><a class="pressdl" href="assets/pronto-1.jpg" download="okay-pronto-photo-1.jpg">Download</a></figcaption></figure>
+      <figure class="reveal"><img src="assets/pronto-2.jpg" alt="Portrait of Okay Pronto, Trinidad-born soca songwriter and producer" loading="lazy"><figcaption style="padding:10px 14px"><a class="pressdl" href="assets/pronto-2.jpg" download="okay-pronto-photo-2.jpg">Download</a></figcaption></figure>
+      <figure class="reveal"><img src="assets/pronto-3.jpg" alt="Okay Pronto, NYC-based soca producer and sound engineer" loading="lazy"><figcaption style="padding:10px 14px"><a class="pressdl" href="assets/pronto-3.jpg" download="okay-pronto-photo-3.jpg">Download</a></figcaption></figure>
+    </div>
+    <div class="prose reveal" style="margin-top:26px">
+      <p class="kicker">Short Bio</p>
+      <p>Okay Pronto is a soca producer, songwriter, and sound engineer from Trinidad and Tobago, based in New York City, known for the 2025 breakout &ldquo;Eskimo (Remix)&rdquo; by Trinidad Killa featuring Nicki Minaj. Born Joseph Michael Figueroa (December 7, 1997), he founded Trypp Records in 2021. &ldquo;Eskimo (Remix)&rdquo;, released February 2025 on Trypp Records, charted iTunes #2 and Apple Music #50, drew 169K+ YouTube views on the official audio, and won the Caribbean Music Award for Soca Collaboration of the Year. A Billboard-charting producer, Okay Pronto has built a catalog of 217 songs spanning production, songwriting, mixing, and mastering, alongside riddim projects.</p>
+    </div>
+  </section>
+  <section class="block wrap" style="padding-bottom:76px">
+    <div class="sec-head reveal"><div><p class="kicker">The Team</p><h2>The Trypp<br><em>Records team</em></h2></div><p>The people and the AI crew getting this project off the ground — all the agents and their roles.</p></div>
+    <div class="team-grid">
+      <div class="member reveal"><h3>Joseph &ldquo;Pronto&rdquo; Figueroa</h3><p>Founder of Trypp Records and the producer at its center. He sets the label&rsquo;s creative direction and serves as the producer across its catalog.</p></div>
+      <div class="member reveal"><h3>Eve</h3><p>The Director of Affairs at Trypp Records and the AI partner on this build, keeping the operation moving and coordinating the people and agents behind the site and its content.</p></div>
+      <div class="member reveal"><h3>Marshal</h3><p>Led the full site build from start to finish, dispatching and directing the content, design, and verification crews that turned the 218-song catalog into the finished page.</p></div>
+      <div class="member reveal"><h3>Quill</h3><p>Handled the content side of the build: sorting the 219 songs into the four artist tiers, assembling the hit banners, and writing the copy across the views.</p></div>
+      <div class="member reveal"><h3>Canvas</h3><p>Handled the design side of the build, extending the frosted-glass desert look consistently across all seven views of the site so every screen reads as one piece.</p></div>
+      <div class="member reveal"><h3>Sentry</h3><p>Served as the independent fact-checker on the build, verifying every claim on the site against the underlying catalog before anything was published to the page.</p></div>
+      <div class="member reveal"><h3>Maestro</h3><p>Coordinated the SongStats sweep across all 219 catalog songs, keeping the stats crew aligned from the first record to the last.</p></div>
+      <div class="member reveal"><h3>Ledger</h3><p>One of the four SongStats crew agents. Ledger pulled public stats (streams, playlists, charts, and Shazams) for an assigned slice of the catalog.</p></div>
+      <div class="member reveal"><h3>Tally</h3><p>One of the four SongStats crew agents. Tally gathered public streaming data, from playlist adds and chart placements to Shazam counts, for an assigned share of the catalog songs.</p></div>
+      <div class="member reveal"><h3>Abacus</h3><p>One of the four SongStats crew agents. Abacus searched and logged the public stats (streams, playlist coverage, charts, and Shazams) for an assigned portion of the 218 records.</p></div>
+      <div class="member reveal"><h3>Census</h3><p>One of the four SongStats crew agents. Census compiled the public performance numbers, including streams, playlists, chart activity, and Shazams, for the assigned set of songs.</p></div>
+      <div class="member reveal"><h3>Mason</h3><p>Constructed the page itself: the hit banners and artwork presentation, the mobile-first pass, the embedded Square booking tool, and the Analytics view.</p></div>
+      <div class="member reveal"><h3>Aeries</h3><p>The Trypp Records backend pipeline management system. It runs the label&rsquo;s backend operations end to end.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= TRYPP ================= -->
+<div class="page" id="page-trypp" data-page="trypp">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:10%">Beyond music · Est. 2021</span>
+    <p class="kicker">The Label</p>
+    <h1>Trypp<br><em>Records</em></h1>
+    <p class="lede">The independent label Pronto founded in <strong>2021</strong> — run out of New York City, rooted in Trinidad &amp; Tobago. The home of his records, and the engine behind them.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px">
+    <div class="prose reveal">
+      <p><strong>The riddim business is the backbone.</strong> Every Carnival season brings new riddim packs from the label, with voicings from artists across the soca world landing as the season heats up.</p>
+      <p>The label’s 2025 breakout was <strong>“Eskimo (Remix)”</strong> — Trinidad Killa ft. Nicki Minaj — which Pronto wrote, produced, mixed and mastered, and which went on to win the Caribbean Music Award for Soca Collaboration of the Year. “Private Party (The Origin Project)” (Machel Montano, 2021) and the Yahweh Riddim’s “YAHWEH” have followed it into the hits column.</p>
+      <p>Beyond his own catalog, Trypp is where artists come to record, mix, master, and produce with him — all six services bookable straight from the Services page.</p>
+    </div>
+  </section>
+  <section class="block wrap">
+    <div class="sec-head reveal"><div><p class="kicker">Riddims</p><h2>17 <em>packs</em></h2></div><p>The backbone of the label — the riddim packs behind the Carnival seasons.</p></div>
+    <ul class="riddim-cloud reveal"><li>Turbo Riddim</li><li>Elders Riddim</li><li>Delta Riddim</li><li>Jungle Book Riddim (SXM)</li><li>Big Wave Riddim</li><li>King&rsquo;s County Riddim</li><li>Dutty Road Riddim 2026</li><li>Honey Pack Riddim</li><li>4AM Riddim</li><li>YHWH Riddim</li><li>Wristband Riddim</li><li>Superbowl Riddim</li><li>Cruise Control Riddim</li><li>Just Do It Riddim</li><li>Fadda Riddim</li><li>Tactical Riddim</li><li>Next Zess Riddim</li></ul>
+  </section>
+  <section class="block wrap" style="padding-bottom:76px">
+    <div class="sec-head reveal"><div><p class="kicker">Key releases</p><h2>Records that<br>built the <em>imprint</em></h2></div></div>
+    <div class="rows">
+      <div class="row-item reveal"><span class="n">2025</span><div><h3>Eskimo (Remix)</h3><p>Trinidad Killa ft. Nicki Minaj — Caribbean Music Award winner, Soca Collaboration of the Year; iTunes #2, Apple Music #50.</p></div></div>
+      <div class="row-item reveal"><span class="n">2021</span><div><h3>Private Party (The Origin Project)</h3><p>Machel Montano — executive producer, co-writer, arranger, background vocals. #4 Apple Music Barbados, 3.01M streams, 13.1K Shazams, BBC Radio 1Xtra, Apple Music’s Soca Essentials playlist.</p></div></div>
+      <div class="row-item reveal"><span class="n">2023</span><div><h3>MAZ3 ACT II</h3><p>Okay Pronto album (May 17, 2023) — Dolby Atmos mix. Singles “FINE,” “UNLOCK,” “CARIBBEAN.”</p></div></div>
+      <div class="row-item reveal"><span class="n">2026</span><div><h3>Pressure</h3><p>Okay Pronto x Kryssy J — duet with his wife.</p></div></div>
+    </div>
+    <p style="margin-top:22px" class="reveal"><a class="btn btn-gold" href="/catalog">Browse the Trypp catalog</a> &nbsp;<a class="btn btn-glass" href="/assets">Label asset packs</a></p>
+  </section>
+  <section class="block wrap" style="padding-bottom:76px">
+    <div class="sec-head reveal"><div><p class="kicker">Albums</p><h2>3 <em>albums</em></h2></div><p>The album-length entries in the catalog data — artwork for riddims and albums was never verified on the live site, so they carry no covers there or here.</p></div>
+    <div class="rows">
+      <div class="row-item reveal"><span class="n">2021</span><div><h3>Maze 3 (ACT I)</h3><p>Okay Pronto, Dec 7, 2021, Trypp Records. Album existence confirmed (Qobuz discography; DistroKid HyperFollow). Full tracklist not found publicly.</p></div></div>
+      <div class="row-item reveal"><span class="n">2023</span><div><h3>MAZ3 (ACT II)</h3><p>Okay Pronto, May 17, 2023, Trypp Records, Dolby Atmos. Label PR names tracks ALL IN, FINE, WE GOOD, UNLOCK, CARIBBEAN. Creative Director: Krystin Frederick; PR: Eve Carter.</p></div></div>
+      <div class="row-item reveal"><span class="n">2023</span><div><h3>KARMA RIDDIM</h3><p>Okay Pronto, Sep 17, 2023. Multi-track release on Qobuz. Tracklist unverified; Pronto&rsquo;s production role on it unconfirmed.</p></div></div>
+    </div>
+
+  </section>
+</div>
+
+<!-- ================= SERVICES ================= -->
+<div class="page" id="page-services" data-page="services">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:10%">Booking runs on Square</span>
+    <p class="kicker">Services</p>
+    <h1>Book time<br>with <em>Pronto.</em></h1>
+    <p class="lede">Every service runs through the booking tool. <strong>Pick what you need and grab a slot</strong> — all six services are available in the one calendar.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px">
+    <div class="rows">
+      <div class="row-item reveal"><span class="n">01</span><div><h3>Recording Session</h3><p>Vocals and records tracked in the studio. Book the session, pull up.</p></div><a class="btn btn-gold open" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book ↗</a></div>
+      <div class="row-item reveal"><span class="n">02</span><div><h3>Mixing Session</h3><p>Stems in, balanced record out.</p></div><a class="btn btn-gold open" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book ↗</a></div>
+      <div class="row-item reveal"><span class="n">03</span><div><h3>Mastering</h3><p>Final polish. Delivery-ready masters.</p></div><a class="btn btn-gold open" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book ↗</a></div>
+      <div class="row-item reveal"><span class="n">04</span><div><h3>Music Production</h3><p>Beats, riddims, full record production.</p></div><a class="btn btn-gold open" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book ↗</a></div>
+      <div class="row-item reveal"><span class="n">05</span><div><h3>Songwriting</h3><p>Hooks, verses, full songs. He wrote a Road March winner.</p></div><a class="btn btn-gold open" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book ↗</a></div>
+      <div class="row-item reveal"><span class="n">06</span><div><h3>Vocal Production</h3><p>Coaching, comping, arranging, tuning. The full vocal pass.</p></div><a class="btn btn-gold open" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Book ↗</a></div>
+    </div>
+  </section>
+  <section class="block wrap" style="padding-bottom:76px">
+    <div class="panel book reveal">
+      <p class="kicker">Book your session</p>
+      <h3>Choose your service and grab a time.</h3>
+      <p>Booking runs on Square — all six services available in the calendar. Pick a service, pick a time that suits you, and it’s locked in.</p>
+      <p style="margin-top:20px"><a class="btn btn-gold" href="https://squareup.com/appointments/book/LZ66HJNWCMVB4" target="_blank" rel="noopener">Open the booking calendar ↗</a></p>
+    </div>
+  </section>
+</div>
+
+<!-- ================= SUBSCRIBE ================= -->
+<div class="page" id="page-subscribe" data-page="subscribe">
+  <div class="page-hero"><div class="wrap">
+    <span class="float-chip" style="top:130px;right:10%">The DAY ONES · The Troop</span>
+    <p class="kicker">The New Music List</p>
+    <h1>First listen.<br><em>Straight to you.</em></h1>
+    <p class="lede">Get Okay Pronto and Trypp Records releases delivered to your inbox. <strong>No account to create</strong> and no feed to keep checking.</p>
+  </div></div>
+  <section class="block wrap" style="padding-top:44px">
+    <div class="two">
+      <div class="panel sub reveal">
+        <p class="kicker">Join the list</p>
+        <h3>Closer to every release.</h3>
+        <p>Subscribe for direct access to the music and the moments around it, sent straight to your inbox as they happen.</p>
+        <form class="fake-form sub-form" name="new-music-list" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+          <input type="hidden" name="form-name" value="new-music-list">
+          <p class="hp-field" aria-hidden="true"><label>Leave this empty: <input type="text" name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+          <input type="text" name="name" placeholder="First name (optional)" aria-label="First name" autocomplete="given-name">
+          <input type="email" name="email" placeholder="Email address" aria-label="Email address" required autocomplete="email">
+          <button class="btn btn-gold" type="submit">Join the list</button>
+        </form>
+        <div class="sub-msg" role="status"></div>
+        <p class="note">New music and release updates, straight to your inbox. Unsubscribe anytime.</p>
+      </div>
+      <div class="panel reveal" style="background:rgba(255,255,255,.04)">
+        <p class="kicker">What to expect</p>
+        <h3>More than drops.</h3>
+        <ul class="svc" style="margin-top:16px"><li>Official audios</li><li>Stems</li><li>DJ packs</li><li>Acapellas</li><li>Exclusive releases</li><li>Announcements</li><li>Event invites</li></ul>
+        <p>The full asset library behind the list lives on the Assets page.</p>
+        <p style="margin-top:16px"><a class="card-link" href="/assets">Browse asset packs →</a></p>
+      </div>
+    </div>
+  </section>
+  <section class="block wrap" style="padding-bottom:76px">
+    <div class="steps">
+      <div class="step reveal"><b>01</b><p>Enter your name and email, then tap Join the list.</p></div>
+      <div class="step reveal"><b>02</b><p>You’re added to the New Music List. No account to create.</p></div>
+      <div class="step reveal"><b>03</b><p>Watch your inbox for new releases and Trypp Records drops. Unsubscribe anytime.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= SONG (dynamic, one per record) ================= -->
+<div class="page" id="page-song" data-page="song">
+  <section class="block wrap" style="padding-top:118px;padding-bottom:76px">
+    <div id="songBody"></div>
+  </section>
+</div>
+
+<!-- ================= ARTIST (dynamic, one per artist) ================= -->
+<div class="page" id="page-artist" data-page="artist">
+  <section class="block wrap" style="padding-top:118px;padding-bottom:76px">
+    <div id="artistBody"></div>
+  </section>
+</div>
+
+</main>
+
+<footer>
+  <div class="foot">
+    <div class="foot-top">
+      <div><img src="assets/pronto-logo-white-transparent.png" alt="Okay Pronto" width="888" height="192"><p>Trypp Records — Beyond music.<br>New York City × Trinidad &amp; Tobago.</p></div>
+      <nav aria-label="Footer">
+        <a href="/" data-nav="home">Home</a><a href="/brand-new" data-nav="brand-new">Brand New</a><a href="/catalog" data-nav="catalog">Catalog</a><a href="/analytics" data-nav="analytics">Analytics</a><a href="/assets" data-nav="assets">Assets</a><a href="/about" data-nav="about">About</a><a href="/trypp" data-nav="trypp">Trypp</a><a href="/services" data-nav="services">Services</a><a href="/subscribe" data-nav="subscribe">Subscribe</a>
+      </nav>
+    </div>
+    <p>Full-parity build of okaypronto.com — every page, record, asset pack, and link from the live site, in one lean file: real-time WebGL homepage hero, 219 song pages, 105 artist pages, and Brand New, Catalog, Analytics, Assets, About, Trypp, Services, and Subscribe in the same design system. Drift &amp; parallax only (no zoom-ins), lazy-loaded artwork, and full respect for reduced-motion settings.</p>
+    <div class="socials"><a href="https://instagram.com/okaypronto" target="_blank" rel="noopener">Instagram ↗</a><a href="https://www.youtube.com/@okaypronto" target="_blank" rel="noopener">YouTube ↗</a><a href="https://www.threads.com/@okaypronto" target="_blank" rel="noopener">Threads ↗</a><a href="https://www.tiktok.com/@okayprontox" target="_blank" rel="noopener">TikTok ↗</a><a href="https://www.facebook.com/okaypronto" target="_blank" rel="noopener">Facebook ↗</a><a href="https://trypprecords.square.site" target="_blank" rel="noopener">Trypp Records ↗</a></div>
+  </div>
+</footer>
+
+<script src="assets/site-data.js"></script>
+<script>var ASSETS=[["Okay Pronto x DJ Khaled&#x27;s Next Up — Tap In","https://drive.google.com/drive/folders/1-Sl4QwMiEAJtY6KM5orQ5VO8phBIa442"],["Okay Pronto x Jah-Z Blaze x Rheon Elbourne — Jump","https://drive.google.com/drive/folders/1H-oyPmx9MBDUrQY_YsIWIhvtktOBqPkp"],["Okay Pronto x Kryssy J — 4ME","https://drive.google.com/drive/folders/1li7SrHNcjtfIAKzA24X16s4HE-9dohQD"],["Okay Pronto — Bad Again","https://drive.google.com/drive/folders/15gOYLa-IVbFITLGf8wk3mWUK3Wk7645u"],["Okay Pronto — Bad John","https://drive.google.com/drive/folders/1oaVpxzD5lww98nF9SSq4S_O4MVpdRqjO"],["Okay Pronto — Bad John (Stems)","https://drive.google.com/drive/folders/17H3ftjTgLk-tMJ1QsRo5Mc1Gmoopx16l"],["Okay Pronto — Honor","https://drive.google.com/drive/folders/1G__7QAlUZn9SuOOU3RCSwuMf-u0Julxg"],["Okay Pronto — Jumbie Land","https://drive.google.com/drive/folders/1J3t1_igZoQQSoLbURXFHnY49IO5Vc8TD"],["Okay Pronto — Misfit","https://drive.google.com/drive/folders/1LyXMzY2cVC2rWhVmEopmGDE44b7BaEXX"],["Okay Pronto — Ms. Hello (feat. Ray Philip)","https://drive.google.com/drive/folders/1LshSq3xjWMW1qac7GIs8UTezqtTE2VGx"],["Okay Pronto — My Crew","https://drive.google.com/drive/folders/1lv91tNuBOyaYR0dVzIfPyDjWUQiQcGb7"],["Okay Pronto — Savannah & Pressure","https://drive.google.com/drive/folders/18Z_A6AlP9vBvFCiMoKexo-ETjJbSsSA6"],["Okay Pronto — Sky High","https://drive.google.com/drive/folders/1jKtVc0eEzbTCqtvA0yKWkecW6fNUypmW"],["Okay Pronto — Soca On D Way (feat. Simbaarley)","https://drive.google.com/drive/folders/1saPTAHpCr9dJ7jJLD5Ea1R9fVCJ9cSjD"],["Okay Pronto — Unlock","https://drive.google.com/drive/folders/17NKu9rXA3K53Hzpp-KIm0gOwm-380zXC"],["Okay Pronto — Vibe","https://drive.google.com/drive/folders/1LbhTR9FRxZZQ1zDwspen9hRL9emgYEb_"],["BIG WAVE — Eggy Dan","https://drive.google.com/drive/folders/1ey2_KF3QzeZy5SktC7EQxnVgojcB0xhc"],["CC — Time (feat. Di Hooligan)","https://drive.google.com/drive/folders/1MChQ8HVM-UwM02aat69Y8LC2ztv-8MD4"],["Di Hooligan — Darlin","https://drive.google.com/drive/folders/13GnEg2jq_pMdLzuVZlfayFyoTwsFwz6Y"],["Island Prince — Bump & Grind","https://drive.google.com/drive/folders/1iQhEO0kmCa1DOedE6YTcAxlAqFZRcHJs"],["Johnny Prospects — Coming Again","https://drive.google.com/drive/folders/1Ls_rbzqsvwplJnEtfF2ESz9NNQcP7wJR"],["JUBY — Right Now","https://drive.google.com/drive/folders/1LwSyR0XUb3ZNtCkTLLgkpkT6Qlv22AfY"],["Keem Fazo — Thank God","https://drive.google.com/drive/folders/1-MVpV12-ehmF9clB2n8eO7HIKqx3WpW9"],["Mr Lee — Heat In The Place","https://drive.google.com/drive/folders/1dD987C4uXL2vaZDOEzXT9-1RNdiKdDnp"],["Mr Lee — Welcome Back","https://drive.google.com/drive/folders/1k92n-202D2BxXzsI8Ek8ArOXhsvHY-2Q"],["Pahjo — Fete Stop","https://drive.google.com/drive/folders/133ZeM6TlogSVpHkr8fuv6owZWDedy8qF"],["Pahjo — Let Loose","https://drive.google.com/drive/folders/1SjcZMlJxfw4RuQvjTpo_J3r55cJlSm7E"],["Positive — Nah Go Work","https://drive.google.com/drive/folders/1zhOBH41fHLbtqp9-gUFFXs5CYaqihYfS"],["Ria Black — Scars","https://drive.google.com/drive/folders/1KeF_i_bXT6OSxThaR_ewkMd_RF4eAkmz"],["Ricochae — Learn How Fi Cook","https://drive.google.com/drive/folders/1TZbDjeWY2tq_ClXD9h4A91Sva6iMxUIK"],["Ricochae — Nothing Good","https://drive.google.com/drive/folders/1W3Ao1r58SKB2Pyj9sPeHVkE-Z3ZBC-AN"],["Skinny Fabulous — Drink To That","https://drive.google.com/drive/folders/1mTImbIxLQvLNBUEaXUC9zMuP9o-Yd9-D"],["Skinny Fabulous — My Head Very Bad (feat. OG Park)","https://drive.google.com/drive/folders/1jhBM6JRTEL_346RBtxN3pwxQu4udZHiu"],["Soca 2027","https://drive.google.com/drive/folders/1_1wVhF36ix9Mo8gxiComdVjpLf4Ax2Ka"],["Supa Mario x Claudette Peters — Spirit","https://drive.google.com/drive/folders/1-pjfg_6zYG3wljnVa2IdaR2aj6MXqKm8"],["Supa Mario — Anomaly","https://drive.google.com/drive/folders/10B-EEcanOPfzp_pIC58AyDN2mueyjlAr"],["Supa Mario — Big Way","https://drive.google.com/drive/folders/1hzNot8HHOW_MpjJy3Q_8YcgoQXKhTW4Q"],["Supa Mario — Dread","https://drive.google.com/drive/folders/1BNLd84VGKrPvUoS5pGl_A75SSeBh2xHm"],["The Fatha — Bubble Right Down","https://drive.google.com/drive/folders/1UeDh_zzOplU0_iIZ1cKVSlZDUlce75ft"],["The Fatha — Vibrate","https://drive.google.com/drive/folders/1yDWkCMFHqiTXIeUcQXiaM8REfjCMe2wF"],["TopRo — Wine Up","https://drive.google.com/drive/folders/1N8hbD7bTXjveF6qGcLIR2G28OZ8HaKXq"],["Trinidad Killa x Orlando Octave x Okay Pronto — Yahweh","https://drive.google.com/drive/folders/1zWSFWsuf2FhzmkF0Avg_1nR1rK-4Tv7F"],["Turbo Riddim — Soca 2026","https://drive.google.com/drive/folders/1hJJsUhwXN95ceT7EZtkz137qANn7M561"],["Vulgar Swag — Hot Gyal Season","https://drive.google.com/drive/folders/1NIfrOs5FZWZ_JRJEr4ikXlBf3YOE0ZNq"]];</script>
+<script src="assets/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var t = document.getElementById("tickerTrack"); if(t){ t.innerHTML += t.innerHTML; }
+
+  /* ---------- ROUTER ---------- */
+  var PAGES = ["home","brand-new","catalog","analytics","assets","about","trypp","services","subscribe","song","artist"];
+  var NAVMAP = {"song":"catalog","artist":"catalog","brand-new":"brand-new"};
+  var inited = {};
+  var SITE_TITLE = "Okay Pronto | Soca Producer & Songwriter NYC";
+  function parseRoute(){
+    var segs = (location.pathname || "/").split("/").filter(function(s){ return s !== ""; });
+    var n = segs.length;
+    if(n >= 2 && segs[n-2] === "song"){ try{ return {page:"song", param:decodeURIComponent(segs[n-1])}; }catch(e){ return {page:"song", param:segs[n-1]}; } }
+    if(n >= 2 && segs[n-2] === "artist"){ try{ return {page:"artist", param:decodeURIComponent(segs[n-1])}; }catch(e){ return {page:"artist", param:segs[n-1]}; } }
+    if(n >= 1 && PAGES.indexOf(segs[n-1]) >= 0) return {page:segs[n-1], param:null};
+    return {page:"home", param:null};
+  }
+  function currentRoute(){ return parseRoute().page; }
+  function showPage(){
+    var rt = parseRoute(), r = rt.page;
+    if(r === "song") renderSong(rt.param);
+    if(r === "artist") renderArtist(rt.param);
+    document.querySelectorAll(".page").forEach(function(pg){ pg.classList.toggle("active", pg.getAttribute("data-page") === r); });
+    var navKey = NAVMAP[r] || r;
+    document.querySelectorAll("[data-nav]").forEach(function(a){ if(a.tagName === "A") a.classList.toggle("active", a.getAttribute("data-nav") === navKey); });
+    window.scrollTo(0,0);
+    setMenu(false);
+    initReveals();
+    if(r === "catalog" && !inited.catalog){ inited.catalog = true; renderCatalog(); }
+    if(r === "assets" && !inited.assets){ inited.assets = true; renderAssets(); }
+    if(r === "analytics" && !inited.analytics){ inited.analytics = true; runAnalytics(); }
+    if(r !== "song" && r !== "artist") document.title = SITE_TITLE;
+  }
+  window.addEventListener("popstate", showPage);
+  document.addEventListener("click", function(e){
+    if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    if(!a || (a.target && a.target !== "_self")) return;
+    var href = a.getAttribute("href");
+    if(!href || href.charAt(0) !== "/" || href.charAt(1) === "/") return;
+    e.preventDefault();
+    if(href !== location.pathname){ try{ history.pushState(null, "", href); }catch(err){} }
+    showPage();
+  });
+
+  /* ---------- MOBILE MENU ---------- */
+  var menuBtn = document.getElementById("menuBtn");
+  var mobileMenu = document.getElementById("mobileMenu");
+  function setMenu(open){
+    mobileMenu.classList.toggle("open", open);
+    mobileMenu.setAttribute("aria-hidden", open ? "false" : "true");
+    menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    document.body.style.overflow = open ? "hidden" : "";
+  }
+  menuBtn.addEventListener("click", function(){ setMenu(!mobileMenu.classList.contains("open")); });
+  document.getElementById("mobileMenuBackdrop").addEventListener("click", function(){ setMenu(false); });
+  mobileMenu.querySelectorAll("a").forEach(function(a){ a.addEventListener("click", function(){ setMenu(false); }); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && mobileMenu.classList.contains("open")) setMenu(false); });
+  window.addEventListener("resize", function(){ if(window.innerWidth >= 1080 && mobileMenu.classList.contains("open")) setMenu(false); });
+
+  /* ---------- REVEALS ---------- */
+  var io = null;
+  function initReveals(){
+    var els = document.querySelectorAll(".page.active .reveal:not(.in)");
+    if(reduced || !("IntersectionObserver" in window)){ els.forEach(function(e){ e.classList.add("in"); }); return; }
+    if(!io){ io = new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } }); },{threshold:.05, rootMargin:"0px 0px 120px 0px"}); }
+    els.forEach(function(e){ io.observe(e); });
+  }
+
+  /* ---------- SUBSCRIBE (demo, visual only) ---------- */
+  document.querySelectorAll(".sub-form").forEach(function(form){
+    form.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var em = form.querySelector('input[type="email"]').value.trim();
+      var msg = form.parentElement.querySelector(".sub-msg");
+      msg.style.display = "block";
+      msg.textContent = em ? ("Welcome to the Troop, " + em + " — you're on the New Music List. First listen, straight to you.") : "Add an email above to join the list.";
+    });
+  });
+
+  /* ---------- TILT CARDS ---------- */
+  if(!reduced){
+    document.querySelectorAll(".tilt").forEach(function(card){
+      card.addEventListener("pointermove", function(e){
+        var r = card.getBoundingClientRect();
+        var x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height;
+        card.style.transform = "rotateY(" + ((x-.5)*14).toFixed(2) + "deg) rotateX(" + ((.5-y)*12).toFixed(2) + "deg) translateZ(0)";
+        card.style.setProperty("--gx", (x*100)+"%"); card.style.setProperty("--gy", (y*100)+"%");
+        var g = card.querySelector(".glare"); if(g){ g.style.setProperty("--gx",(x*100)+"%"); g.style.setProperty("--gy",(y*100)+"%"); }
+      });
+      card.addEventListener("pointerleave", function(){ card.style.transform = "rotateY(0deg) rotateX(0deg)"; });
+    });
+  }
+
+  /* ---------- SHARED HELPERS ---------- */
+  function esc(s){ return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function fmtN(v){
+    if(v == null) return "—";
+    if(v >= 1000000) return (v/1000000).toFixed(1).replace(/\.0$/,"") + "M";
+    if(v >= 10000) return (v/1000).toFixed(1).replace(/\.0$/,"") + "K";
+    return Number(v).toLocaleString("en-US");
+  }
+  var ROLELBL = {written:"Written", produced:"Produced", performed:"Performed", mixed:"Mixed", mastered:"Mastered"};
+  var TIERS = {1:"Hit & Established", 2:"Popular", 3:"Developing", 4:"Establishing"};
+  var SONG_BY_ID = {}, ARTIST_BY_ID = {}, ARTIST_BY_NAME = {};
+  SONGS.forEach(function(s){ if(s.id) SONG_BY_ID[s.id] = s; });
+  ARTISTS.forEach(function(a){ ARTIST_BY_ID[a[0]] = a; ARTIST_BY_NAME[a[1].toLowerCase()] = a[0]; });
+  function slugifyName(n){ return String(n).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+  function artistIdFor(name){
+    if(typeof ALIASES !== "undefined" && ALIASES[name]) return ALIASES[name];
+    var lc = String(name).toLowerCase();
+    if(ARTIST_BY_NAME[lc]) return ARTIST_BY_NAME[lc];
+    var sl = slugifyName(name);
+    return ARTIST_BY_ID[sl] ? sl : null;
+  }
+  function billingLinks(billing){
+    var parts = String(billing).split(/(\s*\(\s*(?:feat\.?|ft\.)\s*|\s*\)\s*|\s+feat\.?\s+|\s+ft\.?\s+|\s+x\s+|\s*&\s*|\s*,\s*|\s+w\/\s+|\s+with\s+|\s*\/\s*)/gi);
+    return parts.map(function(tok){
+      if(!tok || /^\s*(\(|\)|feat\.?|ft\.?|x|&|,|w\/|with|\/)\s*$/i.test(tok)) return esc(tok);
+      var id = artistIdFor(tok.trim());
+      return id ? '<a class="artistlink" href="/artist/' + id + '">' + esc(tok) + '</a>' : esc(tok);
+    }).join("");
+  }
+  function artistLinks(names){
+    return names.map(function(n){
+      var id = artistIdFor(n);
+      return id ? '<a class="artistlink" href="/artist/' + id + '">' + esc(n) + '</a>' : esc(n);
+    }).join(", ");
+  }
+  function normTitle(t){ return String(t).toLowerCase().replace(/[^a-z0-9]+/g," ").trim(); }
+  function songByTitle(t){
+    var n = normTitle(t);
+    for(var i=0;i<SONGS.length;i++){ if(normTitle(SONGS[i].t) === n) return SONGS[i]; }
+    return null;
+  }
+  function coverOr(s){ return s.cov ? s.cov : "assets/placeholder.webp"; }
+
+  /* ---------- HOME RAILS (Latest = RELEASES, Hits = BANNERS) ---------- */
+  function railArt(r, s){
+    if(r.art) return r.art;
+    if(s) return coverOr(s);
+    return null;
+  }
+  function renderHomeRails(){
+    var lg = document.getElementById("latestGrid");
+    if(lg){
+      lg.innerHTML = RELEASES.map(function(r, idx){
+        var s = songByTitle(r.t);
+        var art = railArt(r, s);
+        var title = (s && s.id) ? '<a href="/song/' + s.id + '">' + esc(r.t) + '</a>' : esc(r.t);
+        var link = (s && s.id) ? '<a class="card-link" href="/song/' + s.id + '">Open the song page →</a>'
+          : (r.t === "GRAMMY U Member" ? '<a class="card-link" href="/about">The milestone, on About →</a>' : '<a class="card-link" href="/catalog">Find it in the catalog →</a>');
+        var watch = (s && s.yt) ? ' &nbsp;<a class="card-link" href="https://www.youtube.com/watch?v=' + s.yt + '" target="_blank" rel="noopener">Watch ▶</a>' : '';
+        var artHTML = art ? '<div class="card-art">' + (idx === 0 ? '<span class="badge gold">Newest · #1</span>' : '') + '<img src="' + art + '" alt="' + esc(r.t) + ' — ' + esc(r.a) + ' release artwork" loading="lazy" width="640" height="640"><div class="glare"></div></div>'
+          : '<div class="glass-tile"><p class="small">' + esc(r.a) + ' · ' + esc(r.yr) + '</p><p class="big">' + esc(r.t) + '</p><div class="glare"></div></div>';
+        return '<article class="card reveal"><div class="card-inner">' + artHTML +
+          '<div class="card-body"><p class="artist">' + esc(r.a) + ' · ' + esc(r.yr) + '</p><h3>' + title + '</h3><p>' + esc(r.note) + '</p><p>' + link + watch + '</p></div></div></article>';
+      }).join("");
+    }
+    var hg = document.getElementById("hitGrid");
+    if(hg){
+      hg.innerHTML = BANNERS.map(function(b){
+        var s = songByTitle(b.t) || songByTitle(b.q);
+        var title = (s && s.id) ? '<a href="/song/' + s.id + '">' + esc(b.t) + '</a>' : esc(b.t);
+        var watch = b.link ? '<p style="margin-top:12px"><a class="card-link" href="' + b.link + '" target="_blank" rel="noopener">' + esc(b.ll || "Watch") + ' ↗</a></p>' : '';
+        var det = (s && s.id) ? '<p style="margin-top:6px"><a class="card-link" href="/song/' + s.id + '">Song details →</a></p>' : '';
+        return '<article class="hit reveal"><span class="bnum">' + esc(b.n) + '</span><p class="who">' + esc(b.a) + '</p><h3>' + title + '</h3><p class="line">' + esc(b.line) + '</p><div class="bchips">' + b.chips.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join("") + '</div>' + watch + det + '</article>';
+      }).join("");
+    }
+    var bn = document.getElementById("brandNewList");
+    if(bn){
+      bn.innerHTML = RELEASES.map(function(r, idx){
+        var s = songByTitle(r.t);
+        var art = railArt(r, s);
+        var artHTML = art ? '<img class="rart" src="' + art + '" alt="' + esc(r.t) + ' — release artwork" loading="lazy" width="184" height="184">'
+          : '<div class="glassph" aria-hidden="true">' + esc(r.t.replace(/[^A-Za-z0-9 ]/g,"").split(" ").filter(Boolean).slice(0,2).map(function(w){ return w[0]; }).join("").toUpperCase() || "OP") + '</div>';
+        var title = (s && s.id) ? '<a href="/song/' + s.id + '">' + esc(r.t) + '</a>' : esc(r.t);
+        var link = (s && s.id) ? '<a class="card-link" href="/song/' + s.id + '">Song page →</a>'
+          : (r.t === "GRAMMY U Member" ? '<a class="card-link" href="/about">The milestone, on About →</a>' : '<a class="card-link" href="/catalog">Browse the catalog →</a>');
+        return '<article class="rls-row reveal"><span class="n" style="font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.1em">' + String(idx+1).padStart(2,"0") + '</span>' + artHTML +
+          '<div><p class="artist" style="font-weight:700;color:var(--gold2);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase">' + esc(r.a) + ' · ' + esc(r.yr) + '</p><h3>' + title + '</h3><p style="color:var(--muted);font-size:14px;line-height:1.55;margin-top:4px">' + esc(r.note) + '</p><p style="margin-top:8px">' + link + '</p></div></article>';
+      }).join("");
+    }
+  }
+
+  /* ---------- CATALOG ---------- */
+  var catRole = "all", catQuery = "", catShown = 0, catFiltered = [], catLastTier = null;
+  var PAGE = 48;
+  function catFilteredList(){
+    var list = SONGS.filter(function(s){
+      if(catRole !== "all" && s.roles.indexOf(catRole) < 0) return false;
+      if(catQuery){
+        var hay = (s.t + " " + s.a + " " + (s.era||"") + " " + (s.yr||"")).toLowerCase();
+        if(hay.indexOf(catQuery) < 0) return false;
+      }
+      return true;
+    });
+    list.sort(function(x, y){
+      var tx = x.tier || 9, ty = y.tier || 9;
+      if(tx !== ty) return tx - ty;
+      return x.i - y.i;
+    });
+    return list;
+  }
+  function catItemHTML(s){
+    var roles = s.roles.map(function(r){ return ROLELBL[r] || r; }).join(" · ");
+    var meta = [s.yr || "", s.era || "", roles, s.tier ? ("Tier " + s.tier + " — " + TIERS[s.tier]) : ""].filter(Boolean).join(" — ");
+    var flags = (s.pn ? '<span class="flag">Probable ?</span>' : '') + (s.ua ? '<span class="flag">User-asserted</span>' : '') + (!s.is_song ? '<span class="flag">Video entry</span>' : '');
+    var title = s.id ? '<a href="/song/' + s.id + '">' + esc(s.t) + '</a>' : esc(s.t);
+    return '<div class="cat-item"><img class="thumb" src="' + coverOr(s) + '" alt="" loading="lazy" width="92" height="92"><div><h3>' + title + flags + '</h3><p class="who">' + billingLinks(s.a) + '</p><p class="meta">' + esc(meta) + '</p></div>' +
+      (s.id ? '<a class="go" href="/song/' + s.id + '">Song page →</a>' : '') + '</div>';
+  }
+  function renderCatalog(){
+    catFiltered = catFilteredList(); catShown = 0; catLastTier = null;
+    document.getElementById("catGrid").innerHTML = "";
+    moreCatalog();
+  }
+  function moreCatalog(){
+    var grid = document.getElementById("catGrid");
+    var next = catFiltered.slice(catShown, catShown + PAGE);
+    var grouped = (catRole === "all" && !catQuery);
+    var html = "";
+    next.forEach(function(s){
+      if(grouped && s.tier && s.tier !== catLastTier){
+        catLastTier = s.tier;
+        html += '<p class="group-head" style="grid-column:1/-1">Tier ' + s.tier + ' — ' + TIERS[s.tier] + '</p>';
+      }
+      html += catItemHTML(s);
+    });
+    grid.insertAdjacentHTML("beforeend", html);
+    catShown += next.length;
+    document.getElementById("catCount").textContent = "Showing " + catShown + " of " + catFiltered.length + " records" + (catFiltered.length !== SONGS.length ? " (filtered from " + SONGS.length + ")" : "") + " · grouped by artist tier · 219 songs + 1 video entry";
+    document.getElementById("catEmpty").hidden = catFiltered.length > 0;
+    document.getElementById("catMore").hidden = catShown >= catFiltered.length;
+  }
+  document.getElementById("catMore").addEventListener("click", moreCatalog);
+  document.getElementById("catSearch").addEventListener("input", function(e){ catQuery = e.target.value.trim().toLowerCase(); renderCatalog(); });
+  document.querySelectorAll(".fchip").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true"); catRole = b.getAttribute("data-role"); renderCatalog();
+    });
+  });
+
+  /* ---------- SONG PAGE ---------- */
+  function renderSong(slug){
+    var body = document.getElementById("songBody");
+    var s = slug ? SONG_BY_ID[slug] : null;
+    if(!s){
+      document.title = "Song not found — Okay Pronto";
+      body.innerHTML = '<div class="empty-state"><h2 style="color:#fff;font-size:26px;margin-bottom:10px">Song not found</h2><p>This link may be outdated or mistyped.</p><p style="margin-top:16px"><a class="btn btn-gold" href="/catalog">Back to catalog</a></p></div>';
+      return;
+    }
+    document.title = s.t + " — " + s.a + " · Okay Pronto";
+    var order = SONGS.filter(function(x){ return x.id; });
+    var pos = order.indexOf(s);
+    var prev = pos > 0 ? order[pos-1] : null, next = pos >= 0 && pos < order.length-1 ? order[pos+1] : null;
+    var html = '<div class="songbar"><a class="backbtn" href="/catalog">← Back to catalog</a><span class="spacer"></span>' +
+      (prev ? '<a class="pnbtn" href="/song/' + prev.id + '" aria-label="Previous song: ' + esc(prev.t) + '">←</a>' : '<span class="pnbtn" style="opacity:.3;display:inline-grid;place-items:center">←</span>') +
+      (next ? '<a class="pnbtn" href="/song/' + next.id + '" aria-label="Next song: ' + esc(next.t) + '">→</a>' : '<span class="pnbtn" style="opacity:.3;display:inline-grid;place-items:center">→</span>') + '</div>';
+    html += '<div class="song-hero"><figure class="song-art"><img src="' + coverOr(s) + '" alt="' + esc(s.t) + ' by ' + esc(s.a) + ' — ' + (s.cov ? 'cover artwork' : 'vinyl placeholder artwork (no official cover)') + '" width="840" height="840"></figure><div>' +
+      '<p class="kicker" style="margin:0">Song details</p>' +
+      '<h2 style="font-size:clamp(32px,5vw,46px);letter-spacing:-.02em;line-height:1.02;margin:10px 0 10px">' + esc(s.t) + '</h2>' +
+      '<p style="font-size:17px;font-weight:600">' + billingLinks(s.a) + '</p>' +
+      (s.y != null ? '<p style="margin-top:14px"><span class="yearpill">' + s.y + '</span></p>' : '') +
+      (s.era ? '<p style="margin-top:12px;color:var(--muted);font-size:14px">' + esc(s.era) + '</p>' : '');
+    if(s.roles.length){
+      html += '<div class="creditrow">' + s.roles.map(function(r){ return '<span class="chip">' + (ROLELBL[r] || r) + '</span>'; }).join("") +
+        (s.pn ? '<button class="chip" id="probPill" type="button" aria-expanded="false" title="Credit confidence: probable per catalog" style="border-color:rgba(201,168,106,.55);color:var(--gold2)">Probable ?</button>' : '') + '</div>' +
+        (s.pn ? '<p class="probnote" id="probNote" hidden>Credit confidence: probable per catalog</p>' : '');
+    } else {
+      html += '<p style="margin-top:14px;color:var(--muted)">Credits pending verification.</p>';
+    }
+    if(s.su) html += '<p style="margin-top:20px"><a class="btn btn-glass" href="' + s.su + '" target="_blank" rel="noopener">View on SongStats ↗</a>' +
+      (s.yt ? ' <a class="btn btn-glass" href="https://www.youtube.com/watch?v=' + s.yt + '" target="_blank" rel="noopener">Watch on YouTube ↗</a>' : '') + '</p>';
+    else if(s.yt) html += '<p style="margin-top:20px"><a class="btn btn-glass" href="https://www.youtube.com/watch?v=' + s.yt + '" target="_blank" rel="noopener">Watch on YouTube ↗</a></p>';
+    html += '</div></div>';
+    var ytSrc = s.yt ? "https://www.youtube.com/embed/" + encodeURIComponent(s.yt)
+      : "https://www.youtube.com/embed?listType=search&list=" + encodeURIComponent(s.a + " " + s.t);
+    html += '<div class="songsec"><h3>Watch</h3><div class="yt-wrap"><iframe src="' + ytSrc + '" title="YouTube video for ' + esc(s.t) + ' by ' + esc(s.a) + '" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>';
+    if(s.ss && (s.ss.s != null || s.ss.p != null || s.ss.z != null || (s.ss.b && s.ss.b.length))){
+      var cells = "";
+      if(s.ss.s != null) cells += '<div class="statcell"><b>' + fmtN(s.ss.s) + '</b><span>Streams</span></div>';
+      if(s.ss.p != null) cells += '<div class="statcell"><b>' + fmtN(s.ss.p) + '</b><span>Playlists</span></div>';
+      if(s.ss.z != null) cells += '<div class="statcell"><b>' + fmtN(s.ss.z) + '</b><span>Shazams</span></div>';
+      if(s.ss.b && s.ss.b.length) cells += '<div class="statcell"><span class="peaks">' + s.ss.b.map(esc).join("<br>") + '</span><span>Chart peaks</span></div>';
+      html += '<div class="songsec"><h3>By the numbers</h3><div class="statgrid">' + cells + '</div></div>';
+    }
+    if(s.st) html += '<div class="songsec"><h3>Notes</h3><p class="notetext">' + esc(s.st) + '</p></div>';
+    /* related: shared artists x3 + same year + shared credits (live scoring) */
+    var scored = [];
+    SONGS.forEach(function(o){
+      if(!o.id || o === s) return;
+      var shared = o.ar.filter(function(a){ return s.ar.map(function(x){ return x.toLowerCase(); }).indexOf(a.toLowerCase()) >= 0; }).length;
+      var score = 3*shared + ((s.y != null && o.y != null && o.y === s.y) ? 1 : 0) + s.roles.filter(function(r){ return o.roles.indexOf(r) >= 0; }).length;
+      if(score > 0) scored.push({o:o, score:score});
+    });
+    scored.sort(function(a, b){ return (b.score - a.score) || (a.o.id < b.o.id ? -1 : 1); });
+    var rel = scored.slice(0, 6);
+    if(rel.length){
+      html += '<div class="songsec"><h3>Related songs</h3><div class="relstrip">' + rel.map(function(r){
+        var o = r.o;
+        return '<div class="relcard"><a href="/song/' + o.id + '"><img src="' + coverOr(o) + '" alt="' + esc(o.t) + (o.cov ? ' — cover artwork' : ' — vinyl placeholder artwork') + '" loading="lazy" width="300" height="300"></a><a class="rt" href="/song/' + o.id + '">' + esc(o.t) + '</a><p class="ra">' + artistLinks(o.ar) + '</p></div>';
+      }).join("") + '</div></div>';
+    }
+    body.innerHTML = html;
+    var pp = document.getElementById("probPill");
+    if(pp) pp.addEventListener("click", function(){
+      var note = document.getElementById("probNote");
+      var open = note.hidden; note.hidden = !open;
+      pp.setAttribute("aria-expanded", String(open));
+    });
+  }
+
+  /* ---------- ARTIST PAGE ---------- */
+  function renderArtist(id){
+    var body = document.getElementById("artistBody");
+    var a = id ? ARTIST_BY_ID[id] : null;
+    if(!a){
+      document.title = "Artist not found — Okay Pronto";
+      body.innerHTML = '<div class="empty-state"><h2 style="color:#fff;font-size:26px;margin-bottom:10px">Artist not found</h2><p>This link may be outdated or mistyped.</p><p style="margin-top:16px"><a class="btn btn-gold" href="/catalog">Back to catalog</a></p></div>';
+      return;
+    }
+    document.title = a[1] + " · Okay Pronto";
+    var idx = ARTISTS.indexOf(a);
+    var prev = idx > 0 ? ARTISTS[idx-1] : null, next = idx < ARTISTS.length-1 ? ARTISTS[idx+1] : null;
+    var songs = a[4].map(function(sid){ return SONG_BY_ID[sid]; }).filter(Boolean);
+    var html = '<div class="songbar"><a class="backbtn" href="/catalog">← Back to catalog</a><span class="spacer"></span>' +
+      (prev ? '<a class="pnbtn" href="/artist/' + prev[0] + '" aria-label="Previous artist: ' + esc(prev[1]) + '">←</a>' : '<span class="pnbtn" style="opacity:.3;display:inline-grid;place-items:center">←</span>') +
+      (next ? '<a class="pnbtn" href="/artist/' + next[0] + '" aria-label="Next artist: ' + esc(next[1]) + '">→</a>' : '<span class="pnbtn" style="opacity:.3;display:inline-grid;place-items:center">→</span>') + '</div>';
+    html += '<p class="kicker">Artist</p><h2 style="font-size:clamp(36px,6vw,58px);letter-spacing:-.03em;line-height:.98;font-weight:900;text-transform:uppercase">' + esc(a[1]) + '</h2>' +
+      '<div class="stats" style="max-width:640px"><div class="stat"><b>' + songs.length + '</b><span>Catalog records</span></div><div class="stat"><b>' + fmtN(a[3]) + '</b><span>Total streams (SongStats, matched)</span></div></div>' +
+      (a[2].length ? '<div class="creditrow">' + a[2].map(function(r){ return '<span class="chip">' + (ROLELBL[r] || r) + '</span>'; }).join("") + '</div>' : '') +
+      '<p style="margin-top:14px;color:var(--muted);font-size:14.5px">Pronto&rsquo;s roles across this artist&rsquo;s records in the catalog.</p>';
+    html += '<div class="cat-grid" style="margin-top:22px">' + songs.map(catItemHTML).join("") + '</div>';
+    body.innerHTML = html;
+  }
+
+/* ---------- ASSETS ---------- */
+  function renderAssets(){
+    drawAssets("");
+  }
+  function drawAssets(q){
+    var list = ASSETS.map(function(a, i){ return {a:a, i:i}; }).filter(function(x){ return !q || x.a[0].toLowerCase().indexOf(q) >= 0; });
+    var html = "";
+    list.forEach(function(x, pos){
+      if(!q){
+        if(x.i === 0) html += '<p class="group-head">Okay Pronto</p>';
+        if(x.i === 16) html += '<p class="group-head">Artists &amp; Riddims</p>';
+      }
+      var name = x.a[0].replace(/&amp;/g,"&").replace(/</g,"&lt;");
+      html += '<div class="row-item"><span class="n">' + String(x.i+1).padStart(2,"0") + '</span><div><h3>' + name + '</h3><p>' + (x.a[0].indexOf("(Stems)") >= 0 ? "Official stem assets." : (x.a[0].indexOf("Heat In The Place") >= 0 ? "Mr Lee official assets. Audio, visualizer, and release materials." : "Official assets folder. Music, artwork, and promotional materials.")) + '</p></div><a class="btn btn-glass open" href="' + x.a[1] + '" target="_blank" rel="noopener">Open folder ↗</a></div>';
+    });
+    document.getElementById("assetRows").innerHTML = html;
+    document.getElementById("assetCount").textContent = list.length + " asset packs";
+    document.getElementById("assetEmpty").hidden = list.length > 0;
+  }
+  document.getElementById("assetSearch").addEventListener("input", function(e){ drawAssets(e.target.value.trim().toLowerCase()); });
+
+/* ---------- ANALYTICS ---------- */
+  function fmt(v, mode){
+    if(mode === "m") return (v/1000000).toFixed(1).replace(/\.0$/,"") + "M";
+    if(mode === "k") return Math.round(v/1000) + "K";
+    if(mode === "pct") return Math.round(v) + "%";
+    return Math.round(v).toLocaleString("en-US");
+  }
+  function runAnalytics(){
+    document.querySelectorAll("#page-analytics [data-count]").forEach(function(el){
+      var target = parseFloat(el.getAttribute("data-count")), mode = el.getAttribute("data-fmt");
+      if(reduced){ el.textContent = fmt(target, mode); return; }
+      var t0 = performance.now(), dur = 1300;
+      (function step(now){
+        var p = Math.min((now - t0)/dur, 1); var eased = 1 - Math.pow(1-p, 3);
+        el.textContent = fmt(target * eased, mode);
+        if(p < 1) requestAnimationFrame(step);
+      })(t0);
+    });
+    setTimeout(function(){
+      document.querySelectorAll("#page-analytics .bar-fill").forEach(function(b){ b.style.width = b.getAttribute("data-w") + "%"; });
+    }, reduced ? 0 : 150);
+    var cav = document.getElementById("cavList");
+    if(cav) cav.innerHTML = SSCAV.map(function(c){ return '<li style="color:var(--muted);font-size:14px;line-height:1.6">· ' + esc(c) + '</li>'; }).join("");
+    renderAnaTracks("");
+  }
+  function renderAnaTracks(q){
+    var rows = document.getElementById("anaRows");
+    if(!rows) return;
+    var list = SST.filter(function(t){ return !q || ((t[0]||"") + " " + (t[1]||"")).toLowerCase().indexOf(q) >= 0; });
+    rows.innerHTML = list.map(function(t){
+      var nums = [];
+      if(t[3] != null) nums.push("Streams <b>" + fmtN(t[3]) + "</b>");
+      if(t[4] != null) nums.push("Playlists <b>" + fmtN(t[4]) + "</b>");
+      if(t[5] != null) nums.push("Reach <b>" + fmtN(t[5]) + "</b>");
+      if(t[6] != null) nums.push("Chart entries <b>" + fmtN(t[6]) + "</b>");
+      if(t[8] != null) nums.push("Shazams <b>" + fmtN(t[8]) + "</b>");
+      if(t[9]) nums.push("Released " + esc(t[9]));
+      return '<div class="ana-row"><div style="flex:1"><h3>' + esc(t[0]) + '</h3><p class="who">' + esc(t[1]) + '</p><p class="nums">' + nums.join(" · ") + (t[7] ? '<br>Best chart: <b>' + esc(t[7]) + '</b>' : '') + '</p></div>' + (t[2] ? '<a class="go" style="flex:none;font-size:12px;font-weight:800;color:var(--gold2);border:1px solid rgba(201,168,106,.45);padding:8px 12px;border-radius:999px;white-space:nowrap" href="' + t[2] + '" target="_blank" rel="noopener">SongStats ↗</a>' : '') + '</div>';
+    }).join("");
+    document.getElementById("anaCount").textContent = list.length + " matched tracks";
+    document.getElementById("anaEmpty").hidden = list.length > 0;
+  }
+  var anaSearchEl = document.getElementById("anaSearch");
+  if(anaSearchEl) anaSearchEl.addEventListener("input", function(e){ renderAnaTracks(e.target.value.trim().toLowerCase()); });
+
+  /* ---------- THREE.JS HERO (home) ---------- */
+  var canvas = document.getElementById("gl");
+  var errBox = document.getElementById("gl-error");
+  function showErr(m){ errBox.style.display="block"; errBox.textContent = "3D note: " + m + " — the page still works; scroll for the Latest releases, or use the menu to explore the full site."; }
+  window.addEventListener("error", function(e){ if(e && e.message && /THREE|WebGL/i.test(e.message)) showErr(e.message); });
+
+  var driftOn = !reduced, angled = false;
+  var driftBtn = document.getElementById("driftBtn"), angleBtn = document.getElementById("angleBtn"), goldBtn = document.getElementById("goldBtn");
+  function syncBtns(){
+    driftBtn.setAttribute("aria-pressed", driftOn ? "true":"false"); driftBtn.textContent = driftOn ? "✦ Drift: On" : "✦ Drift: Off";
+    angleBtn.setAttribute("aria-pressed", angled ? "true":"false"); angleBtn.textContent = angled ? "◐ View: Angled" : "◐ View: Straight on";
+  }
+  syncBtns();
+  driftBtn.addEventListener("click", function(){ driftOn = !driftOn; syncBtns(); });
+  angleBtn.addEventListener("click", function(){ angled = !angled; syncBtns(); });
+
+  function initGL(){
+  try{
+    if(!window.THREE) throw new Error("Three.js failed to load.");
+    var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x070708, 0.045);
+    var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100); camera.position.set(0, 0.2, 9.5);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    var key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(4,6,6); scene.add(key);
+    var goldLight = new THREE.PointLight(0xc9a86a, 18, 20); goldLight.position.set(-4,-1,3); scene.add(goldLight);
+    var rim = new THREE.DirectionalLight(0xffe9b8, 0.7); rim.position.set(-5,2,-4); scene.add(rim);
+    var loader = new THREE.TextureLoader();
+    function tex(p){ var x = loader.load(p); x.colorSpace = THREE.SRGBColorSpace; x.anisotropy = 4; return x; }
+    function texCover(p, planeW, planeH){
+      var x = loader.load(p, function(){
+        if(!x.image) return;
+        var imgA = x.image.width / x.image.height, planeA = planeW / planeH;
+        if(imgA > planeA){ x.repeat.x = planeA / imgA; x.offset.x = (1 - x.repeat.x) / 2; }
+        else if(imgA < planeA){ x.repeat.y = imgA / planeA; x.offset.y = (1 - x.repeat.y) / 2; }
+        x.needsUpdate = true;
+      });
+      x.colorSpace = THREE.SRGBColorSpace; x.anisotropy = 4; return x;
+    }
+    var group = new THREE.Group(); scene.add(group);
+    var items = [];
+    function addCard(texture, w, h, pos, rotY, isLogo){
+      var g = new THREE.Group();
+      var glass = new THREE.Mesh(new THREE.PlaneGeometry(w+0.14, h+0.14),
+        new THREE.MeshPhysicalMaterial({color:0xffffff, metalness:0.1, roughness:0.15, transparent:true, opacity:0.32, depthWrite:false}));
+      glass.renderOrder = 1; g.add(glass);
+      var mat = isLogo
+        ? new THREE.MeshStandardMaterial({map:texture, transparent:true, roughness:0.5, metalness:0.05, depthWrite:false})
+        : new THREE.MeshStandardMaterial({map:texture, roughness:0.38, metalness:0.08});
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat); m.position.z = 0.03; m.renderOrder = 2; g.add(m);
+      g.position.set(pos[0], pos[1], pos[2]); g.rotation.y = rotY;
+      g.userData = {baseY:pos[1], baseX:pos[0], phase:Math.random()*Math.PI*2, speed:0.5+Math.random()*0.5, rotY:rotY};
+      group.add(g); items.push(g); return g;
+    }
+    addCard(tex("assets/art-hook-up-cover.jpg"), 2.15, 2.15, [2.9, 0.9, 0.4], -0.38, false);
+    addCard(tex("assets/art-savannah-official.jpg"), 1.75, 1.75, [1.15, -1.15, -0.7], -0.18, false);
+    addCard(tex("assets/art-heat-in-the-place.jpg"), 1.45, 1.45, [4.15, -1.25, -1.6], -0.5, false);
+    addCard(tex("assets/pronto-logo-white-transparent.png"), 3.1, 0.67, [2.15, 2.35, -0.4], -0.22, true);
+    addCard(texCover("assets/pronto-1.jpg", 1.96, 2.45), 1.96, 2.45, [-1.95, 1.0, 0.55], 0.26, false);
+    addCard(texCover("assets/pronto-2.jpg", 1.33, 2.0), 1.33, 2.0, [5.05, -0.5, -1.05], -0.52, false);
+    addCard(texCover("assets/pronto-3.jpg", 1.6, 1.78), 1.6, 1.78, [-3.55, -1.05, -1.5], 0.34, false);
+    addCard(texCover("assets/pronto-artist-2026.jpg", 1.44, 1.92), 1.44, 1.92, [-0.55, 2.3, -1.7], 0.12, false);
+    [[-3.6,1.4,-1.2,1.1],[-2.7,-1.5,-2.0,0.8],[-4.2,-0.4,-2.8,1.4],[0.2,2.0,-2.4,0.9]].forEach(function(s){
+      var shard = new THREE.Mesh(new THREE.PlaneGeometry(s[3], s[3]),
+        new THREE.MeshPhysicalMaterial({color:0xd9c58f, roughness:0.15, metalness:0.2, transparent:true, opacity:0.25, depthWrite:false}));
+      shard.position.set(s[0],s[1],s[2]); shard.rotation.set(0.2,0.5,0.3); shard.userData={baseY:s[1],phase:Math.random()*6,speed:.4};
+      shard.renderOrder=0; group.add(shard); items.push(shard);
+    });
+    var rings = new THREE.Group();
+    [[3.4,0,0xC9A86A],[4.3,0.6,0x8a744a],[2.6,-0.5,0xe8cf94]].forEach(function(r,i){
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(r[0], 0.012, 8, 120), new THREE.MeshStandardMaterial({color:r[2], roughness:0.3, metalness:0.9, transparent:true, opacity:0.55}));
+      ring.rotation.x = Math.PI/2.4 + i*0.18; ring.position.y = r[1]; rings.add(ring);
+    });
+    rings.position.set(2.6,0.1,-1.2); rings.visible = false; scene.add(rings);
+    goldBtn.addEventListener("click", function(){
+      rings.visible = !rings.visible;
+      goldBtn.setAttribute("aria-pressed", rings.visible ? "true":"false");
+      goldBtn.textContent = rings.visible ? "◎ Gold rings: On" : "◎ Gold rings: Off";
+    });
+    var c = document.createElement("canvas"); c.width=c.height=64; var ctx=c.getContext("2d");
+    var grad = ctx.createRadialGradient(32,32,0,32,32,32); grad.addColorStop(0,"rgba(255,240,200,1)"); grad.addColorStop(0.4,"rgba(230,200,140,.55)"); grad.addColorStop(1,"rgba(230,200,140,0)");
+    ctx.fillStyle=grad; ctx.fillRect(0,0,64,64);
+    var pGeo = new THREE.BufferGeometry(); var N=80; var pos=new Float32Array(N*3);
+    for(var i=0;i<N;i++){ pos[i*3]=(Math.random()-0.5)*16; pos[i*3+1]=(Math.random()-0.5)*9; pos[i*3+2]=-3+Math.random()*5; }
+    pGeo.setAttribute("position", new THREE.BufferAttribute(pos,3));
+    var pts = new THREE.Points(pGeo, new THREE.PointsMaterial({size:0.14, map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false, opacity:0.75, color:0xe8cf94}));
+    scene.add(pts);
+    var ground = new THREE.Mesh(new THREE.CircleGeometry(11, 48), new THREE.MeshBasicMaterial({color:0x0b0b0c, transparent:true, opacity:0.9}));
+    ground.rotation.x = -Math.PI/2; ground.position.y = -3.4; scene.add(ground);
+    var mouseX=0, mouseY=0, tx=0, ty=0;
+    function onMove(cx, cy){ var r = canvas.getBoundingClientRect(); mouseX = ((cx - r.left)/Math.max(r.width,1) - .5)*2; mouseY = ((cy - r.top)/Math.max(r.height,1) - .5)*2; }
+    window.addEventListener("pointermove", function(e){ onMove(e.clientX, e.clientY); }, {passive:true});
+    window.addEventListener("touchmove", function(e){ if(e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+    function resize(){
+      var w = canvas.clientWidth || window.innerWidth, h = canvas.clientHeight || window.innerHeight;
+      renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix();
+      var s = w < 640 ? 0.72 : (w < 900 ? 0.88 : 1);
+      group.scale.set(s,s,s); group.position.x = w < 640 ? 0.55 : 0.35; group.position.y = w < 640 ? 1.15 : 0.55;
+    }
+    window.addEventListener("resize", resize); resize();
+    var startT = performance.now();
+    function animate(){
+      requestAnimationFrame(animate);
+      if(currentRoute() !== "home") return;
+      try{
+        var t = (performance.now() - startT) / 1000;
+        tx += (mouseX - tx)*0.045; ty += (mouseY - ty)*0.045;
+        group.rotation.y = tx*0.22 + (angled ? 0.38 : 0);
+        group.rotation.x = ty*0.12 + (angled ? -0.08 : 0);
+        camera.position.x = tx*0.45; camera.position.y = 0.2 - ty*0.3; camera.lookAt(0.6, 0.3, 0);
+        if(driftOn){
+          items.forEach(function(o){ o.position.y = o.userData.baseY + Math.sin(t*o.userData.speed + o.userData.phase)*0.14; o.rotation.z = Math.sin(t*0.4 + o.userData.phase)*0.035; });
+          pts.rotation.y = t*0.018; rings.rotation.y = t*0.12; rings.rotation.z = Math.sin(t*0.3)*0.06;
+        }
+        renderer.render(scene, camera);
+      }catch(err){ showErr(err.message); }
+    }
+    animate();
+  }catch(err){ showErr(err && err.message ? err.message : "WebGL unavailable on this device."); }
+  }
+  if("requestIdleCallback" in window){ requestIdleCallback(initGL, {timeout:600}); } else { setTimeout(initGL, 40); }
+
+  renderHomeRails();
+  showPage();
+})();
+</script>
+</body>
+</html>
